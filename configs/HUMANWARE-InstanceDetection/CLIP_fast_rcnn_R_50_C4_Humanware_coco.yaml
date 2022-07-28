@@ -1,0 +1,40 @@
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
+MODEL:
+  ROI_HEADS:
+    NUM_CLASSES: 5
+  #   NMS_THRESH_TEST: 0.5
+  # CLIP:
+  #   NO_BOX_DELTA: True
+  #   OFFLINE_RPN_NMS_THRESH: 0.9
+  #   FOCAL_SCALED_LOSS: 0.5 #default
+TEST:
+  EVAL_PERIOD: 2500
+SOLVER:
+  IMS_PER_BATCH: 2 #was 8 for gpu memory, 2 for RN50x4
+  BASE_LR: 0.001 #was 0.002
+  #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
+  STEPS: (6000, 8000) #decrease lr by factor of 10
+  MAX_ITER: 9000
+  WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
+  CHECKPOINT_PERIOD: 2500
+
+
+# TEST:
+#   EVAL_PERIOD: 25000
+# SOLVER:
+#   IMS_PER_BATCH: 8
+#   BASE_LR: 0.002
+#   STEPS: (60000, 80000)
+#   MAX_ITER: 90000
+#   WARMUP_ITERS: 5000
+
+# INPUT:
+#   MIN_SIZE_TRAIN_SAMPLING: choice
+#   MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+#   MAX_SIZE_TRAIN: 1333
+#   MIN_SIZE_TEST: 800
+#   MAX_SIZE_TEST: 1333
+#   FORMAT: "RGB"
+DATASETS:
+  TRAIN: ("humanware_train_basic",)
+  TEST: ("humanware_val_basic",)

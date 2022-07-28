@@ -86,6 +86,22 @@ _PREDEFINED_SPLITS_COCO["coco_person"] = {
     ),
 }
 
+_PREDEFINED_SPLITS_COCO["humanware"] = {
+    "humanware_train_full": ("humanware/train_full", "humanware/annotations/instances_train_full.json"),
+    "humanware_train_awake": ("humanware/train_awake", "humanware/annotations/instances_train_awake.json"),
+    "humanware_train_basic": ("humanware/train_basic", "humanware/annotations/instances_train_basic.json"),
+
+    "humanware_val_full": ("humanware/val_full", "humanware/annotations/instances_val_full.json"),
+    "humanware_val_awake": ("humanware/val_awake", "humanware/annotations/instances_val_awake.json"),
+    "humanware_val_basic": ("humanware/val_basic", "humanware/annotations/instances_val_basic.json"),
+
+    "humanware_test_full": ("humanware/test_full", "humanware/annotations/instances_test_full.json"),
+    "humanware_test_awake": ("humanware/test_awake", "humanware/annotations/instances_test_awake.json"),
+    "humanware_test_basic": ("humanware/test_basic", "humanware/annotations/instances_test_basic.json"),
+    "humanware_test_collected": ("humanware/test_collected", "humanware/annotations/instances_test_collected.json"),
+    }
+
+
 
 _PREDEFINED_SPLITS_COCO_PANOPTIC = {
     "coco_2017_train_panoptic": (
@@ -180,6 +196,13 @@ _PREDEFINED_SPLITS_LVIS = {
         "lvis_v1_test_dev_custom_img": ("coco/", "lvis/lvis_v1_image_info_test_dev.json"),
         "lvis_v1_test_challenge_custom_img": ("coco/", "lvis/lvis_v1_image_info_test_challenge.json"),
     },
+    #temp placeholder for custom image evaluations
+    "humanware_custom_img": {
+        "humanware_train_custom_img": ("humanware/train", "humanware/annotations/instances_train.json"),
+        "humanware_val_custom_img": ("humanware/val", "humanware/annotations/instances_val.json"),
+        "humanware_test_custom_img": ("humanware/test", "humanware/annotations/instances_test.json"),
+    },
+
     # regular fully supervised setting
     "lvis_v1_fullysup": {
         "lvis_v1_train_fullysup": ("coco/", "lvis/lvis_v1_train.json"),

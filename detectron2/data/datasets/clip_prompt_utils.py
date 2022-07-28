@@ -343,6 +343,7 @@ def convert_example_to_features_bpe(text, tokenizer, sot_token, eot_token, conte
     assert isinstance(text, str)
     input_ids = [sot_token] + tokenizer.encode(text) + [eot_token]
     if len(input_ids) > context_length:
+        #cut off if higher than 77 words in prompt
         input_ids = input_ids[:context_length]
     input_ids = np.array(input_ids)
 
@@ -430,10 +431,11 @@ def pre_tokenize(class_names):
         for t1 in t1s:
             this_input_ids = convert_example_to_features_bpe(t1, tokenizer, sot_token, eot_token)                                                        
             input_ids.append(torch.tensor(this_input_ids, dtype=torch.long))
-
+        #print(len(input_ids))
         input_ids_all.append(torch.stack(input_ids, 0))
 
     input_ids_all_classes = torch.stack(input_ids_all, 0)
+    #print(input_ids_all_classes.shape)
     return input_ids_all_classes
 
 

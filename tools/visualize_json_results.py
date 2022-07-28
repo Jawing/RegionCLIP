@@ -67,12 +67,12 @@ if __name__ == "__main__":
         def dataset_id_map(ds_id):
             return metadata.thing_dataset_id_to_contiguous_id[ds_id]
 
-    elif "lvis" in args.dataset:
+    elif any(x in args.dataset for x in ['lvis','humanware']):
         # LVIS results are in the same format as COCO results, but have a different
         # mapping from dataset category id to contiguous category id in [0, #categories - 1]
         def dataset_id_map(ds_id):
             return ds_id - 1
-
+    #TODO define ID mapping for Humanware
     else:
         raise ValueError("Unsupported dataset: {}".format(args.dataset))
 

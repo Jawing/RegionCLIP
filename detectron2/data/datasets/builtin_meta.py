@@ -557,4 +557,13 @@ def _get_builtin_metadata(dataset_name):
             "thing_classes": CITYSCAPES_THING_CLASSES,
             "stuff_classes": CITYSCAPES_STUFF_CLASSES,
         }
+    elif dataset_name == "humanware":
+        return {
+                "thing_classes": ["elevator doors", "keychain", "Trash can", "wallet", "Wall_outlet" ],
+                #"stuff_classes": []
+                }
+
+
+
+
     raise KeyError("No built-in metadata for dataset {}".format(dataset_name))

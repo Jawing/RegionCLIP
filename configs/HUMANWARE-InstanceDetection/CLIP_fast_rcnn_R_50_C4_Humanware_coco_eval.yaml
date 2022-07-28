@@ -1,0 +1,13 @@
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
+MODEL:
+  ROI_HEADS:
+    NUM_CLASSES: 6
+  # uncomment below for zeroshot inference
+  #   NMS_THRESH_TEST: 0.5
+  # CLIP:
+  #   NO_BOX_DELTA: True
+  #   OFFLINE_RPN_NMS_THRESH: 0.9
+#    FOCAL_SCALED_LOSS: 0.5 #default
+DATASETS:
+  TRAIN: ("humanware_train",)
+  TEST: ("humanware_test_awake",)

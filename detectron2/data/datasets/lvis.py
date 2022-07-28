@@ -237,7 +237,16 @@ def get_lvis_instances_meta(dataset_name):
         return _get_lvis_instances_meta_v0_5()
     elif "v1" in dataset_name:
         return _get_lvis_instances_meta_v1()
+    #TODO
+    elif "humanware" in dataset_name:
+        return _get_humanware_instances_meta()
     raise ValueError("No built-in metadata for dataset {}".format(dataset_name))
+
+def _get_humanware_instances_meta():
+    return {
+    "thing_classes": ["elevator doors", "elevator button", "keychain", "Trash can", "wallet", "Wall_outlet" ],
+    #"stuff_classes": []
+    }
 
 
 def _get_lvis_instances_meta_v0_5():
