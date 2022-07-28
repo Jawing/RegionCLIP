@@ -6,7 +6,8 @@ python3 ./tools/extract_concept_features.py \
 MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 INPUT_DIR ./datasets/custom_concepts \
-OUTPUT_DIR ./output/concept_feats
+OUTPUT_DIR ./output/concept_feats \
+MODEL.CLIP.GET_CONCEPT_EMB True \
 
 # RN50x4 concept embeddings HUMANWARE
 # python3 ./tools/extract_concept_features.py \
@@ -16,7 +17,8 @@ OUTPUT_DIR ./output/concept_feats
 # MODEL.RESNETS.DEPTH 200 \
 # MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 # INPUT_DIR ./datasets/custom_concepts \
-# OUTPUT_DIR ./output/concept_feats
+# OUTPUT_DIR ./output/concept_feats \
+# MODEL.CLIP.GET_CONCEPT_EMB True \
 
 # RN50 concept embeddings
 # python3 ./tools/extract_concept_features.py \
@@ -24,7 +26,8 @@ OUTPUT_DIR ./output/concept_feats
 # MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
 # MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 # INPUT_DIR ./datasets/custom_concepts \
-# OUTPUT_DIR ./output/concept_feats
+# OUTPUT_DIR ./output/concept_feats \
+# MODEL.CLIP.GET_CONCEPT_EMB True \
 
 # RN50x4 concept embeddings
 # python3 ./tools/extract_concept_features.py \
@@ -34,4 +37,5 @@ OUTPUT_DIR ./output/concept_feats
 # MODEL.RESNETS.DEPTH 200 \
 # MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 # INPUT_DIR ./datasets/custom_concepts \
-# OUTPUT_DIR ./output/concept_feats
+# OUTPUT_DIR ./output/concept_feats \
+# MODEL.CLIP.GET_CONCEPT_EMB True \
