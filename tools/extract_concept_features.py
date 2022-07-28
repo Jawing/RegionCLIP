@@ -92,12 +92,17 @@ def main(args):
             with torch.no_grad():
                 token_embeddings = pre_tokenize([concept]).to(model.device)[0]
                 text_features = model.lang_encoder.encode_text(token_embeddings)
+                #text_features /= text_features.norm(dim=-1, keepdim=True)
                 # average over all templates
                 text_features = text_features.mean(0, keepdim=True)
+                #text_features /= text_features.norm(dim=-1, keepdim=True)
                 concept_feats.append(text_features)
 
     concept_feats = torch.stack(concept_feats, 0)
-    concept_feats = torch.squeeze(concept_feats).cpu()
+    concept_feats = torch.squeeze(concept_feats).cpu().to(torch.float32)
+    print(concept_feats)
+    print(concept_feats.shape)
+    print(concept_feats.norm(dim=1))
     saved_path = os.path.join(cfg.OUTPUT_DIR, 'concept_embeds.pth')
     torch.save(concept_feats, saved_path)
 
