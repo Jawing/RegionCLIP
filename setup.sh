@@ -1,7 +1,12 @@
+#default exports
+export PYTHONUNBUFFERED=1
+export PYTHONPATH="$PYTHONPATH:/home/wanjiz/tpu/models"
+
 # environment
 python3 -m regionclip_venv ./regionclip_venv
-source activate regionclip_venv
-conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+source ./regionclip_venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r ./requirements.txt
 
 # RegionCLIP
 git clone git@github.com:microsoft/RegionCLIP.git
