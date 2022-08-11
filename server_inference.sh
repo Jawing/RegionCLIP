@@ -4,8 +4,8 @@
 python3 ./tools/train_net.py \
 --eval-only  \
 --num-gpus 1 \
---config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_coco.yaml \
-MODEL.WEIGHTS ./output/model_best.pth \
+--config-file ./configs/HUMANWARE-InstanceDetection/server_config.yaml \
+MODEL.WEIGHTS ./models/model_best.pth \
 MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50x4_nn5key.pth \
 MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50x4_nn5key.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_1x_ovd_FSD.yaml \
