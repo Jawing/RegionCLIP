@@ -10,9 +10,13 @@ gt_hw_json = './datasets/humanware/annotations/instances_test_collected.json'
 gt_basic_json = './datasets/humanware/annotations/instances_test_basic.json'
 gt_basicVal_json = './datasets/humanware/annotations/instances_val_basic.json'
 #result_lvis_json = './output/inference/lvis_instances_results.json'
-result_coco_json = './output/inference/coco_instances_results_basic_basicVal.json'
+
+#define output coco json and ground true below
+result_coco_json = './output/inference/coco_instances_results_full_basic.json'
 basic = True
 val = False
+
+
 if basic:
     if val:
         save_fig_loc = './output/inference/basicVal_pr50'
