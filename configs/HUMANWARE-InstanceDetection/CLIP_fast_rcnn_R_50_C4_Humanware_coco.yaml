@@ -3,10 +3,11 @@ MODEL:
   ROI_HEADS:
     NUM_CLASSES: 5
   #   NMS_THRESH_TEST: 0.5
-  # CLIP:
+  CLIP:
   #   NO_BOX_DELTA: True
   #   OFFLINE_RPN_NMS_THRESH: 0.9
-  #   FOCAL_SCALED_LOSS: 0.5 #default
+    FOCAL_SCALED_LOSS: 1
+    FOCAL_SCALED_LOSS_ALPHA: -1
 TEST:
   EVAL_PERIOD: 2500
 SOLVER:
@@ -18,15 +19,17 @@ SOLVER:
   WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
   CHECKPOINT_PERIOD: 2500
 
+#start from 20000 iter
 
 # TEST:
-#   EVAL_PERIOD: 25000
+#   EVAL_PERIOD: 5000
 # SOLVER:
-#   IMS_PER_BATCH: 8
-#   BASE_LR: 0.002
-#   STEPS: (60000, 80000)
-#   MAX_ITER: 90000
+#   IMS_PER_BATCH: 2
+#   BASE_LR: 0.001
+#   STEPS: (20000, 40000)
+#   MAX_ITER: 80000
 #   WARMUP_ITERS: 5000
+#   CHECKPOINT_PERIOD: 5000
 
 # INPUT:
 #   MIN_SIZE_TRAIN_SAMPLING: choice
@@ -36,5 +39,5 @@ SOLVER:
 #   MAX_SIZE_TEST: 1333
 #   FORMAT: "RGB"
 DATASETS:
-  TRAIN: ("humanware_train_basic",)
-  TEST: ("humanware_val_basic",)
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_val_full",)

@@ -47,16 +47,19 @@
 
 #################################################################################
 
-# RN50, HUMANWARE (COCO FINAL NN model) on custom
+# RN50x4, HUMANWARE (COCO FINAL NN model) on custom
 python3 ./tools/train_net.py \
 --eval-only  \
 --num-gpus 1 \
 --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_coco.yaml \
-MODEL.WEIGHTS ./output/model_final_coco_28000_nnlocal.pth \
-MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
-MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
+MODEL.WEIGHTS ./output/model_best.pth \
+MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50x4_nn5key.pth \
+MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50x4_nn5key.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_1x_ovd_FSD.yaml \
 MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
+MODEL.CLIP.TEXT_EMB_DIM 640 \
+MODEL.RESNETS.DEPTH 200 \
+MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION 18 \
 # MODEL.CLIP.MULTIPLY_RPN_SCORE True \
 # MODEL.ROI_HEADS.SOFT_NMS_ENABLED True \
 # need to enable in settings https://github.com/microsoft/RegionCLIP/issues/13
@@ -64,12 +67,17 @@ MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
 # visualize the prediction json file
 python ./tools/visualize_json_results.py \
 --input ./output/inference/lvis_instances_results.json \
---output ./output/custom_ft_iid_coco_nnrcf_softnms \
+--output ./output/best_test_basic_viz \
 --dataset humanware_val_custom_img \
---conf-threshold 0.70 \
+--conf-threshold 0.10 \
 --show-unique-boxes \
---max-boxes 50 \
---small-region-px 210 \
+--max-boxes 100 \
+--small-region-px 420 \
+
+#change ood folder images
+#rsync -a --delete custom_images_hw_test/ custom_images/
+#rsync -a --delete custom_images_basic_test/ custom_images/
+
 
 # RN50, HUMANWARE (COCO) on custom
 # python3 ./tools/train_net.py \

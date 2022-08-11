@@ -244,7 +244,7 @@ def get_lvis_instances_meta(dataset_name):
 
 def _get_humanware_instances_meta():
     return {
-    "thing_classes": ["elevator doors", "elevator button", "keychain", "Trash can", "wallet", "Wall_outlet" ],
+    "thing_classes": ["elevator doors", "keychain", "Trash can", "wallet", "Wall_outlet" ],
     #"stuff_classes": []
     }
 

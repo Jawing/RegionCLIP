@@ -492,6 +492,7 @@ class FastRCNNOutputLayers(nn.Module):
             self.cls_loss_weight = torch.ones(num_classes + 1)
             self.cls_loss_weight[-1] = bg_cls_loss_weight
         self.focal_scaled_loss = openset_test[3]  # focal scaling
+        self.focal_scaled_loss_alpha = openset_test[4]  # focal scaling
         # inference options
         self.no_box_delta = no_box_delta  # box delta after regression
         self.multiply_rpn_score = multiply_rpn_score[0]
@@ -523,7 +524,7 @@ class FastRCNNOutputLayers(nn.Module):
             "bg_cls_loss_weight"    : cfg.MODEL.CLIP.BG_CLS_LOSS_WEIGHT,
             "multiply_rpn_score"    : (cfg.MODEL.CLIP.MULTIPLY_RPN_SCORE, cfg.MODEL.CLIP.VIS),
             "openset_test"          : (cfg.MODEL.CLIP.OPENSET_TEST_NUM_CLASSES, cfg.MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH, \
-                                       cfg.MODEL.CLIP.CLSS_TEMP, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS)
+                                       cfg.MODEL.CLIP.CLSS_TEMP, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA)
             # fmt: on
         }
 
@@ -610,7 +611,7 @@ class FastRCNNOutputLayers(nn.Module):
         if self.cls_loss_weight is not None and self.cls_loss_weight.device != scores.device:
             self.cls_loss_weight = self.cls_loss_weight.to(scores.device)
         if self.focal_scaled_loss is not None:
-            loss_cls = self.focal_loss(scores, gt_classes, gamma=self.focal_scaled_loss)
+            loss_cls = self.focal_loss(scores, gt_classes, gamma=self.focal_scaled_loss, alpha=self.focal_scaled_loss_alpha)
         else:    
             loss_cls = cross_entropy(scores, gt_classes, reduction="mean") if self.cls_loss_weight is None else \
                        cross_entropy(scores, gt_classes, reduction="mean", weight=self.cls_loss_weight)
@@ -622,7 +623,7 @@ class FastRCNNOutputLayers(nn.Module):
         }
         return {k: v * self.loss_weight.get(k, 1.0) for k, v in losses.items()}
 
-    def focal_loss(self, inputs, targets, gamma=0.5, reduction="mean"):
+    def focal_loss(self, inputs, targets, gamma=0.5, alpha=-1, reduction="mean"):
         """Inspired by RetinaNet implementation"""
         if targets.numel() == 0 and reduction == "mean":
             return input.sum() * 0.0  # connect the gradient
@@ -632,6 +633,13 @@ class FastRCNNOutputLayers(nn.Module):
         p = F.softmax(inputs, dim=-1)
         p_t = p[torch.arange(p.size(0)).to(p.device), targets]  # get prob of target class
         loss = ce_loss * ((1 - p_t) ** gamma)
+
+        #test with alpha focus on negatives parameters bg (self.num_classes) (retinanet, alpha=0.25, gamma = 2)
+        if alpha >= 0:
+            #alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            alpha_t = torch.full((targets.size(0),), alpha).to(p.device)
+            alpha_t[targets == self.num_classes] = 1 - alpha
+            loss = alpha_t * loss
 
         # bg loss weight
         if self.cls_loss_weight is not None:

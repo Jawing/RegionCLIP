@@ -198,9 +198,9 @@ _PREDEFINED_SPLITS_LVIS = {
     },
     #temp placeholder for custom image evaluations
     "humanware_custom_img": {
-        "humanware_train_custom_img": ("humanware/train", "humanware/annotations/instances_train.json"),
-        "humanware_val_custom_img": ("humanware/val", "humanware/annotations/instances_val.json"),
-        "humanware_test_custom_img": ("humanware/test", "humanware/annotations/instances_test.json"),
+        "humanware_train_custom_img": ("humanware/train_full", "humanware/annotations/instances_train_full.json"),
+        "humanware_val_custom_img": ("humanware/val_full", "humanware/annotations/instances_val_full.json"),
+        "humanware_test_custom_img": ("humanware/test_collected", "humanware/annotations/instances_test_collected.json"),
     },
 
     # regular fully supervised setting
