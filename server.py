@@ -82,9 +82,11 @@ def detect_objects():
     r = request.json
 
     #set thresholds
-    logging.info(f"Set iou threshold = {r['iou_threshold']}")
-    logging.info(f"Set conf threshold = {r['conf_threshold']}")
-    set_thresholds(model_config_file,iou_threshold=r['iou_threshold'], conf_threshold=r['conf_threshold'])
+    iou = float(r['iou_threshold'])
+    conf = float(r['conf_threshold'])
+    logging.info(f"Set iou threshold = {iou}")
+    logging.info(f"Set conf threshold = {conf}")
+    set_thresholds(model_config_file,iou_threshold=iou, conf_threshold=conf)
     
     image_content = r['image']
     
