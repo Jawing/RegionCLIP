@@ -46,5 +46,6 @@ with open(inst_file, 'r') as f:
 jsonResponse = add_category_name(annos)
 
 end_inf = time.time()
+print(f'Number of detections: {len(jsonResponse)}')
 print(json.dumps(jsonResponse))
 print(f'Inference time: {end_inf - start_inf}')
