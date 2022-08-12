@@ -3,6 +3,7 @@ git clone https://github.com/Jawing/RegionCLIP.git
 
 #default exports
 export PYTHONUNBUFFERED=1
+export CUDA_VISIBLE_DEVICES=0,1
 
 # setup environment
 sudo rm -r /data/venv/regionclip
@@ -23,5 +24,13 @@ pip install shapely
 pip install flask
 #python3 -m pip install -r ./RegionCLIP/requirements.txt
 
-#put images here for inference
+#create missing directories
 mkdir ./RegionCLIP/datasets/custom_images
+mkdir ./RegionCLIP/models
+mkdir -p ./RegionCLIP/output/concept_feats
+mkdir -p ./RegionCLIP/pretrained_ckpt/rpn
+
+#import model/concept weights
+
+#run server
+python ./RegionCLIP/server.py
