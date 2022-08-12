@@ -2,6 +2,7 @@ DATASETS:
   TEST: ("lvis_v1_val_custom_img",)
   TRAIN: ("lvis_v1_train_custom_img",)
 MODEL:
+  #DEVICE: cpu
   CLIP:
     OFFLINE_RPN_NMS_THRESH: 0.9
     VIS: true

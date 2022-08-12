@@ -31,5 +31,6 @@ mkdir -p ./RegionCLIP/pretrained_ckpt/rpn
 
 #import model/concept weights
 
-#run server
-python ./RegionCLIP/server.py
+#run server (start within regionclip dir)
+cd ./RegionCLIP
+python server.py
