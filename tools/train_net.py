@@ -132,23 +132,35 @@ def setup(args):
     #default_setup(cfg, args) #0.7second save
     return cfg
 
+#TODO function that returns model and cfg for inference, cfg should be updated with server
+# def setup_model_cfg(args):
 
+#     return cfg, model
+
+import time
 def main(args):
-    cfg = setup(args)
+    cfg = setup(args) #0.03 seconds
+    #TODO save and load default config
+    # print(cfg['MODEL']['DEVICE'])
+    # cfg['MODEL']['DEVICE']='cpu'
+    # print(cfg['MODEL']['DEVICE'])
     #print(cfg.OUTPUT_DIR)
     if args.eval_only:
-        model = Trainer.build_model(cfg)
+        #load model onto server to save time TODO
+        model = Trainer.build_model(cfg) #1.93 seconds (2.15 seconds cpu time)     
         #important checkpointer
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
-        )
+        ) #0.24 seconds
         if cfg.MODEL.META_ARCHITECTURE in ['CLIPRCNN', 'CLIPFastRCNN', 'PretrainFastRCNN'] \
             and cfg.MODEL.CLIP.BB_RPN_WEIGHTS is not None\
             and cfg.MODEL.CLIP.CROP_REGION_TYPE == 'RPN': # load 2nd pretrained model
             DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, bb_rpn_weights=True).resume_or_load(
                 cfg.MODEL.CLIP.BB_RPN_WEIGHTS, resume=False
             )
-        res = Trainer.test(cfg, model)
+        #use time.time() walltime time.process_time() cpu time()
+        res = Trainer.test(cfg, model) #4.5 seconds (2.43 seconds cpu time)
+
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg, model))
         if comm.is_main_process():
@@ -168,10 +180,15 @@ def main(args):
         )
     return trainer.train()
 
+import copy
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     #print("Command Line Args:", args)
+    #TODO try to only save cfg
+    # print(type(args))
+    # args2 = copy.copy(args)
+    # args2.num_gpus=2
     launch(
         main,
         args.num_gpus,

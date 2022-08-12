@@ -22,7 +22,10 @@ inst_file = './output/inference/lvis_instances_results.json'
 model_config_file = './configs/HUMANWARE-InstanceDetection/server_config.yaml'
 inference_img = './datasets/custom_images/test.jpg'
 classes = []
+
+from tools import train_net
 Model = None #TODO
+cfg = None #TODO
 
 #set threshold for yaml config file
 def set_thresholds(config_file,iou_threshold=0.2, conf_threshold=0.6):
@@ -32,7 +35,7 @@ def set_thresholds(config_file,iou_threshold=0.2, conf_threshold=0.6):
     cfg['MODEL']['ROI_HEADS']['SCORE_THRESH_TEST'] = conf_threshold
     with open(config_file, "w") as ymlfile:
         yaml.safe_dump(cfg,ymlfile,default_flow_style=False)
-
+    
 #add names to inst_file
 def add_category_name(annos):
     for anno in annos:
@@ -121,3 +124,5 @@ def detect_objects():
 
 if __name__ == '__main__':
     app.run(port=5200, debug=True, threaded=True)
+    #from android studio emulator
+    #app.run(host="172.31.6.26", debug=True, threaded=True)
