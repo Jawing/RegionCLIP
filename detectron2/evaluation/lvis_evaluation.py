@@ -38,7 +38,7 @@ class LVISEvaluator(DatasetEvaluator):
                 Otherwise, will evaluate the results in the current process.
             output_dir (str): optional, an output directory to dump results.
         """
-        from lvis import LVIS
+        # from lvis import LVIS #0.5 second save
 
         self._logger = logging.getLogger(__name__)
 
@@ -58,10 +58,10 @@ class LVISEvaluator(DatasetEvaluator):
 
         self._metadata = MetadataCatalog.get(dataset_name)
         json_file = PathManager.get_local_path(self._metadata.json_file)
-        self._lvis_api = LVIS(json_file)
+        # self._lvis_api = LVIS(json_file) #4 SECOND SAVE
         # Test set json files do not contain annotations (evaluation must be
         # performed using the LVIS evaluation server).
-        self._do_evaluation = len(self._lvis_api.get_ann_ids()) > 0
+        # self._do_evaluation = len(self._lvis_api.get_ann_ids()) > 0 #0.1 second save
         if dataset_name == 'lvis_v1_val_custom_img':
             self._do_evaluation = False
 

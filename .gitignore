@@ -63,3 +63,6 @@ _darcs
 /projects/*/datasets
 /models
 /snippet
+
+#server log
+flask.log

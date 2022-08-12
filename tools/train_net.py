@@ -42,6 +42,10 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 #os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
+#disable all warnings and loggings
+import warnings
+warnings.filterwarnings("ignore")
+logging.disable()
 
 class Trainer(DefaultTrainer):
     """
@@ -125,7 +129,7 @@ def setup(args):
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
-    default_setup(cfg, args)
+    #default_setup(cfg, args) #0.7second save
     return cfg
 
 
@@ -134,6 +138,7 @@ def main(args):
     #print(cfg.OUTPUT_DIR)
     if args.eval_only:
         model = Trainer.build_model(cfg)
+        #important checkpointer
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
@@ -166,7 +171,7 @@ def main(args):
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    print("Command Line Args:", args)
+    #print("Command Line Args:", args)
     launch(
         main,
         args.num_gpus,
