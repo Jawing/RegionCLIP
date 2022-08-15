@@ -129,13 +129,23 @@ def setup(args):
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
-    #default_setup(cfg, args) #0.7second save
+    default_setup(cfg, args) #0.7second save
     return cfg
 
 #TODO function that returns model and cfg for inference, cfg should be updated with server
-# def setup_model_cfg(args):
-
-#     return cfg, model
+def setup_model_cfg(cfg):
+    model = Trainer.build_model(cfg) #1.93 seconds (2.15 seconds cpu time)     
+    #important checkpointer
+    DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+        cfg.MODEL.WEIGHTS, resume=False
+    ) #0.24 seconds
+    if cfg.MODEL.META_ARCHITECTURE in ['CLIPRCNN', 'CLIPFastRCNN', 'PretrainFastRCNN'] \
+        and cfg.MODEL.CLIP.BB_RPN_WEIGHTS is not None\
+        and cfg.MODEL.CLIP.CROP_REGION_TYPE == 'RPN': # load 2nd pretrained model
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, bb_rpn_weights=True).resume_or_load(
+            cfg.MODEL.CLIP.BB_RPN_WEIGHTS, resume=False
+        )
+    return model
 
 import time
 def main(args):
@@ -159,6 +169,7 @@ def main(args):
                 cfg.MODEL.CLIP.BB_RPN_WEIGHTS, resume=False
             )
         #use time.time() walltime time.process_time() cpu time()
+        # res only returned for evaluations with ground truth
         res = Trainer.test(cfg, model) #4.5 seconds (2.43 seconds cpu time)
 
         if cfg.TEST.AUG.ENABLED:

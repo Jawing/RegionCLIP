@@ -1,11 +1,23 @@
 import time
 from subprocess import call
-inference_script = './server_inference.sh'
 inst_file = './output/inference/lvis_instances_results.json'
 model_config_file = './configs/HUMANWARE-InstanceDetection/server_config.yaml'
 import json
 import yaml
 import cv2
+
+from tools.train_net import Trainer
+from tools.train_net import setup_model_cfg
+#config setup
+import pickle
+model = None #TODO
+cfg = None #TODO
+config_script = './config_init.sh'
+call(['bash',config_script])
+config_dir = './server_config.pkl'
+with open(config_dir, 'rb') as file:
+    cfg = pickle.load(file)
+model = setup_model_cfg(cfg)
 
 #test image read write
 inference_img = './datasets/custom_images/test.jpg'
@@ -24,20 +36,22 @@ def add_category_name(annos):
         anno["category_name"] = classes[anno["category_id"]-1]
     return annos
 #set threshold for yaml config file
-def set_thresholds(config_file,iou_threshold=0.2, conf_threshold=0.6):
-    with open(config_file, "r") as ymlfile:
-        cfg = yaml.safe_load(ymlfile)
+def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
+    # with open(config_file, "r") as ymlfile:
+    #     cfg = yaml.safe_load(ymlfile)
     cfg['MODEL']['ROI_HEADS']['NMS_THRESH_TEST'] = iou_threshold
     cfg['MODEL']['ROI_HEADS']['SCORE_THRESH_TEST'] = conf_threshold
-    with open(config_file, "w") as ymlfile:
-        yaml.safe_dump(cfg,ymlfile,default_flow_style=False)
+    # with open(config_file, "w") as ymlfile:
+    #     yaml.safe_dump(cfg,ymlfile,default_flow_style=False)
+    return cfg
+    
 start_inf = time.time()
-
-set_thresholds(model_config_file,iou_threshold=0.3, conf_threshold=0.6)
-
+cfg = set_thresholds(cfg,iou_threshold=0.3, conf_threshold=0.6)
+#resetup model configs with new parameters
+model = setup_model_cfg(cfg)
 #get inference (can be slow)
-call(['bash',inference_script])
 
+Trainer.test(cfg,model)
 
 with open(inst_file, 'r') as f:
     annos = json.load(f)
