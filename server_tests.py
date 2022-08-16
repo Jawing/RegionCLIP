@@ -6,8 +6,8 @@ import json
 import yaml
 import cv2
 
-from tools.train_net import Trainer
-from tools.train_net import setup_model_cfg
+from tools.train_net import model_inference, model_inference_img
+from tools.train_net import setup_model_cfg, setup_model_cfg_pred
 #config setup
 import pickle
 model = None #TODO
@@ -17,13 +17,13 @@ call(['bash',config_script])
 config_dir = './server_config.pkl'
 with open(config_dir, 'rb') as file:
     cfg = pickle.load(file)
-model = setup_model_cfg(cfg)
+model = setup_model_cfg_pred(cfg)
 
 #test image read write
 inference_img = './datasets/custom_images/test.jpg'
 img = cv2.imread(inference_img,cv2.IMREAD_COLOR)
 #cv2.imwrite('./img.jpg', img)
-
+print(type(img))
 #get classes
 classes = []
 cls_file = './classes.txt'
@@ -48,10 +48,11 @@ def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
 start_inf = time.time()
 cfg = set_thresholds(cfg,iou_threshold=0.3, conf_threshold=0.6)
 #resetup model configs with new parameters
-model = setup_model_cfg(cfg)
+model = setup_model_cfg_pred(cfg)
 #get inference (can be slow)
 
-Trainer.test(cfg,model)
+model_inference(cfg,model)
+# model_inference_img(img)
 
 with open(inst_file, 'r') as f:
     annos = json.load(f)

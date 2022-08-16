@@ -25,7 +25,7 @@ classes = []
 
 model = None
 cfg = None
-from tools.train_net import model_inference #imports bug the server #TODO
+from tools.train_net import model_inference
 from tools.train_net import setup_model_cfg
 import pickle
 #inital config setup
@@ -35,15 +35,10 @@ with open(config_dir, 'rb') as file:
 model = setup_model_cfg(cfg)
 
 
-
-#set threshold for yaml config file
+#set threshold for config
 def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
-    # with open(config_file, "r") as ymlfile:
-    #     cfg = yaml.safe_load(ymlfile)
     cfg['MODEL']['ROI_HEADS']['NMS_THRESH_TEST'] = iou_threshold
     cfg['MODEL']['ROI_HEADS']['SCORE_THRESH_TEST'] = conf_threshold
-    # with open(config_file, "w") as ymlfile:
-    #     yaml.safe_dump(cfg,ymlfile,default_flow_style=False)
     return cfg
 
 #add names to inst_file
@@ -110,27 +105,18 @@ def detect_objects():
     #get total time after turning off all print/time functions
     start = time.time()
     r = request.json
-
-    # #set thresholds
-    # iou = float(r['iou_threshold'])
-    # conf = float(r['conf_threshold'])
-    # logging.info(f"Set iou threshold = {iou}")
-    # logging.info(f"Set conf threshold = {conf}")
-    # set_thresholds(model_config_file,iou_threshold=iou, conf_threshold=conf)
     
     image_content = r['image']
     
     nparr = np.frombuffer(base64.b64decode(image_content), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    #img = cv2.imread(inference_img,cv2.IMREAD_COLOR)
 
     cv2.imwrite(inference_img, img)
 
     start_inf = time.time()
 
-    #get inference (6 seconds per image) #TODO reduce inference time by preload model
+    #get inference
     model_inference(cfg,model)
-    # call(['bash',inference_script])
 
     end_inf = time.time()
     logging.info(f'Inference time: {end_inf - start_inf}')

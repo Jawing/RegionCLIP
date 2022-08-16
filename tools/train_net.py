@@ -25,7 +25,7 @@ import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog
-from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, hooks, launch
+from detectron2.engine import DefaultTrainer, DefaultPredictor, default_argument_parser, default_setup, hooks, launch
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
     CityscapesSemSegEvaluator,
@@ -46,6 +46,69 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 # import warnings
 # warnings.filterwarnings("ignore")
 # logging.disable()
+
+from torch import nn
+from contextlib import ExitStack
+from detectron2.data import build_detection_test_loader
+from detectron2.evaluation import inference_context, inference_on_dataset
+from detectron2.modeling import build_model
+class Predictor(DefaultPredictor):
+    @classmethod
+    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+        """
+        Create evaluator(s) for a given dataset.
+        This uses the special metadata "evaluator_type" associated with each builtin dataset.
+        For your own dataset, you can simply create an evaluator manually in your
+        script and do not have to worry about the hacky if-else logic here.
+        """
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
+        return LVISEvaluator(dataset_name, output_dir=output_folder)
+    @classmethod
+    def build_test_loader(cls, cfg, dataset_name):
+        """
+        Returns:
+            iterable
+
+        It now calls :func:`detectron2.data.build_detection_test_loader`.
+        Overwrite it if you'd like a different data loader.
+        """
+        return build_detection_test_loader(cfg, dataset_name)
+    # @classmethod
+    # def build_model(cls, cfg):
+    #     """
+    #     Returns:
+    #         torch.nn.Module:
+
+    #     It now calls :func:`detectron2.modeling.build_model`.
+    #     Overwrite it if you'd like a different model.
+    #     """
+    #     model = build_model(cfg)
+    #     logger = logging.getLogger(__name__)
+    #     logger.info("Model:\n{}".format(model))
+    #     return model
+
+    @classmethod
+    def test(cls, cfg, model, evaluators=None):
+        
+            dataset_name = 'lvis_v1_val_custom_img'
+            data_loader = cls.build_test_loader(cfg, dataset_name)
+            evaluator = cls.build_evaluator(cfg, dataset_name)
+
+            #inside inference_on_dataset function
+            evaluator.reset()
+            with ExitStack() as stack:
+                if isinstance(model, nn.Module):
+                    stack.enter_context(inference_context(model))
+                stack.enter_context(torch.no_grad())
+                #TODO get input directly without data_loader (dataloader )
+                for idx, inputs in enumerate(data_loader):
+                    outputs = model(inputs)
+                    evaluator.process(inputs, outputs)
+
+            #for storing in ./output/inference/lvis_instances_results.json
+            #_ = evaluator.evaluate()
+
+            return evaluator._predictions[0]['instances']
 
 class Trainer(DefaultTrainer):
     """
@@ -146,9 +209,17 @@ def setup_model_cfg(cfg):
             cfg.MODEL.CLIP.BB_RPN_WEIGHTS, resume=False
         )
     return model
-
+def setup_model_cfg_pred(cfg):
+    pred = Predictor(cfg)
+    return pred.model
+#TODO test predictor
+def model_inference_img(cfg,img):
+    Predictor(cfg)
+    return Predictor(img)
 def model_inference(cfg,model):
-    Trainer.test(cfg, model)
+    #Trainer.test(cfg, model)
+    Predictor.test(cfg,model)
+    torch.cuda.empty_cache()
     pass
 
 import time
