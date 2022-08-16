@@ -24,9 +24,9 @@ inference_img = './datasets/custom_images/test.jpg'
 config_dir = './server_config.pkl'
 classes = []
 
-model = None #TODO
-cfg = None #TODO
-from tools.train_net import model_inference
+model = None
+cfg = None
+from tools.train_net import model_inference #imports bug the server #TODO
 from tools.train_net import setup_model_cfg
 import pickle
 #inital config setup
