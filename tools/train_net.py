@@ -43,9 +43,9 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 #disable all warnings and loggings
-import warnings
-warnings.filterwarnings("ignore")
-logging.disable()
+# import warnings
+# warnings.filterwarnings("ignore")
+# logging.disable()
 
 class Trainer(DefaultTrainer):
     """
