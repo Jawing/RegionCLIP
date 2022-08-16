@@ -26,7 +26,7 @@ classes = []
 
 model = None #TODO
 cfg = None #TODO
-from tools.train_net import Trainer
+from tools.train_net import model_inference
 from tools.train_net import setup_model_cfg
 import pickle
 #inital config setup
@@ -85,13 +85,13 @@ def logs():
     return jsonify(response)
 
 # route get/set thresholds
-@app.route('/api/get_thresholds', methods=['PUT'])
+@app.route('/api/detection/get_thresholds', methods=['GET'])
 def get_thresholds():
     response = {}
     response['NMS_THRESH_TEST'] = cfg['MODEL']['ROI_HEADS']['NMS_THRESH_TEST']
     response['SCORE_THRESH_TEST'] = cfg['MODEL']['ROI_HEADS']['SCORE_THRESH_TEST']
     return jsonify(response)
-@app.route('/api/set_thresholds', methods=['PUT'])
+@app.route('/api/detection/set_thresholds', methods=['PUT'])
 def set_thresholds():
     r = request.json
     #set thresholds
@@ -130,7 +130,7 @@ def detect_objects():
     start_inf = time.time()
 
     #get inference (6 seconds per image) #TODO reduce inference time by preload model
-    Trainer.test(cfg,model)
+    model_inference(cfg,model)
     # call(['bash',inference_script])
 
     end_inf = time.time()

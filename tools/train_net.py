@@ -147,6 +147,10 @@ def setup_model_cfg(cfg):
         )
     return model
 
+def model_inference(cfg,model):
+    Trainer.test(cfg, model)
+    pass
+
 import time
 def main(args):
     cfg = setup(args) #0.03 seconds
