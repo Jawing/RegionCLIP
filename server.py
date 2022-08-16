@@ -4,7 +4,6 @@ import cv2
 from subprocess import call
 import json
 import base64
-import yaml
 import os
 #time testing
 import time
@@ -140,7 +139,7 @@ def detect_objects():
         annos = json.load(f)
 
     #remove img at the end
-    os.remove(inference_img)
+    #os.remove(inference_img)
 
     #compute prediction and output real json in response
     jsonResponse = add_category_name(annos)
@@ -148,10 +147,19 @@ def detect_objects():
     
     logging.info(f'Number of detections: {len(jsonResponse)}')
     logging.info(f'Total detection time: {end - start}')
+    jsonResponse = json.dumps(jsonResponse)
+    logging.info(jsonResponse)
 
-    return Response(response=json.dumps(jsonResponse), status=200, mimetype="application/json")
+    response = Response(response=jsonResponse, status=200, mimetype="application/json")
+    response.headers.add('content-length', len(jsonResponse))
+    return response
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == '__main__':
-    app.run(port=5200, debug=True, threaded=True)
+    #app.run(port=5200, debug=True, threaded=True)
     #from android studio emulator
-    #app.run(host="172.31.6.26", debug=True, threaded=True)
+    app.run(host="172.31.6.26", debug=True, threaded=True)
