@@ -43,15 +43,15 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 #disable all warnings and loggings
-# import warnings
-# warnings.filterwarnings("ignore")
+import warnings
+warnings.filterwarnings("ignore")
 # logging.disable()
-
+import time
 from torch import nn
 from contextlib import ExitStack
 from detectron2.data import build_detection_test_loader
-from detectron2.evaluation import inference_context, inference_on_dataset
-from detectron2.modeling import build_model
+from detectron2.evaluation import inference_context
+from detectron2.evaluation.coco_evaluation import instances_to_coco_json
 class Predictor(DefaultPredictor):
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -73,19 +73,7 @@ class Predictor(DefaultPredictor):
         Overwrite it if you'd like a different data loader.
         """
         return build_detection_test_loader(cfg, dataset_name)
-    # @classmethod
-    # def build_model(cls, cfg):
-    #     """
-    #     Returns:
-    #         torch.nn.Module:
 
-    #     It now calls :func:`detectron2.modeling.build_model`.
-    #     Overwrite it if you'd like a different model.
-    #     """
-    #     model = build_model(cfg)
-    #     logger = logging.getLogger(__name__)
-    #     logger.info("Model:\n{}".format(model))
-    #     return model
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):
@@ -109,7 +97,43 @@ class Predictor(DefaultPredictor):
             #_ = evaluator.evaluate()
 
             return evaluator._predictions[0]['instances']
+    @classmethod
+    def process(self, output):
+        """
+        Args:
+            inputs: the inputs to a LVIS model (e.g., GeneralizedRCNN).
+                It is a list of dict. Each dict corresponds to an image and
+                contains keys like "height", "width", "file_name", "image_id".
+            outputs: the outputs of a LVIS model. It is a list of dicts with key
+                "instances" that contains :class:`Instances`.
+        """
+        instances = output["instances"].to("cpu")
+        return instances_to_coco_json(instances, 0)
+    
+    def __call__(self, original_image):
+        """
+        Args:
+            original_image (np.ndarray): an image of shape (H, W, C) (in BGR order).
 
+        Returns:
+            predictions (dict):
+                the output of the model for one image only.
+                See :doc:`/tutorials/models` for details about the format.
+        """
+        with torch.no_grad():  # https://github.com/sphinx-doc/sphinx/issues/4258
+            # Apply pre-processing to image.
+            if self.input_format == "RGB":
+                # whether the model expects BGR inputs or RGB
+                original_image = original_image[:, :, ::-1]
+            height, width = original_image.shape[:2]
+            image = self.aug.get_transform(original_image).apply_image(original_image)
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+
+            inputs = {"image": image, "height": height, "width": width}
+            predictions = self.model([inputs])[0]
+            
+            return Predictor.process(predictions)
+            
 class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains pre-defined default logic for
@@ -195,7 +219,6 @@ def setup(args):
     default_setup(cfg, args) #0.7second save
     return cfg
 
-#TODO function that returns model and cfg for inference, cfg should be updated with server
 def setup_model_cfg(cfg):
     model = Trainer.build_model(cfg) #1.93 seconds (2.15 seconds cpu time)     
     #important checkpointer
@@ -211,18 +234,20 @@ def setup_model_cfg(cfg):
     return model
 def setup_model_cfg_pred(cfg):
     pred = Predictor(cfg)
-    return pred.model
+    return pred
 #TODO test predictor
-def model_inference_img(cfg,img):
-    Predictor(cfg)
-    return Predictor(img)
+def model_inference_img(pred,img):
+    result = pred(img)
+    torch.cuda.empty_cache() # 0.02 seconds
+    return result
 def model_inference(cfg,model):
     #Trainer.test(cfg, model)
-    Predictor.test(cfg,model)
-    torch.cuda.empty_cache()
+    #result doesn't have to be returned test function save in lvis_instances_results.json
+    result = Predictor.test(cfg,model)
+    torch.cuda.empty_cache() # 0.02 seconds
     pass
 
-import time
+
 def main(args):
     cfg = setup(args) #0.03 seconds
     #TODO save and load default config

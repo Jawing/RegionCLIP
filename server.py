@@ -17,23 +17,28 @@ app = Flask(__name__)
 
 #default locations
 config_script = './config_init.sh'
-inst_file = './output/inference/lvis_instances_results.json'
-model_config_file = './configs/HUMANWARE-InstanceDetection/server_config.yaml'
-inference_img = './datasets/custom_images/test.jpg'
 config_dir = './server_config.pkl'
 classes = []
+cat_file = './classes.txt'
+with open(cat_file, 'r') as f:
+    for line in f:
+        classes.append(line.strip())
 
-model = None
+pred = None #prediction class stores model settings
 cfg = None
-from tools.train_net import model_inference
-from tools.train_net import setup_model_cfg
+from tools.train_net import model_inference_img
+from tools.train_net import setup_model_cfg_pred
 import pickle
 #inital config setup
 call(['bash',config_script])
 with open(config_dir, 'rb') as file:
     cfg = pickle.load(file)
-model = setup_model_cfg(cfg)
+pred = setup_model_cfg_pred(cfg)
 
+#pre load inference cache (speed up first inference by 1 second)
+inference_img = './datasets/custom_images/test.jpg'
+img = cv2.imread(inference_img,cv2.IMREAD_COLOR)
+_ = model_inference_img(pred,img)
 
 #set threshold for config
 def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
@@ -56,12 +61,6 @@ def before_first_request():
     """
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
-    #setup class names
-    global classes
-    cat_file = './classes.txt'
-    with open(cat_file, 'r') as f:
-        for line in f:
-            classes.append(line.strip())
     logging.info(f'Model Detecting Classes: {classes}')
 
 
@@ -94,9 +93,9 @@ def set_thresholds():
     logging.info(f"Set iou threshold = {iou}")
     logging.info(f"Set conf threshold = {conf}")
 
-    global cfg,model
+    global cfg,pred
     cfg = set_thresholds(cfg,iou_threshold=iou, conf_threshold=conf)
-    model = setup_model_cfg(cfg)
+    pred = setup_model_cfg_pred(cfg)
 
 # route http posts to this method
 @app.route('/api/detection', methods=['POST'])
@@ -105,39 +104,28 @@ def detect_objects():
     #get total time after turning off all print/time functions
     start = time.time()
     r = request.json
-    
     image_content = r['image']
-    
     nparr = np.frombuffer(base64.b64decode(image_content), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    cv2.imwrite(inference_img, img)
 
     start_inf = time.time()
-
     #get inference
-    model_inference(cfg,model)
-
+    result = model_inference_img(pred,img)
     end_inf = time.time()
-    logging.info(f'Inference time: {end_inf - start_inf}')
-
-    with open(inst_file, 'r') as f:
-        annos = json.load(f)
-
-    #remove img at the end
-    #os.remove(inference_img)
+    logging.info(f'Inference time: {end_inf - start_inf}') #0.5 seconds #(first run always 1.1 second slower)
 
     #compute prediction and output real json in response
-    jsonResponse = add_category_name(annos)
+    jsonResponse = add_category_name(result)
     end = time.time()
     
     logging.info(f'Number of detections: {len(jsonResponse)}')
-    logging.info(f'Total detection time: {end - start}')
+    logging.info(f'Total detection time: {end - start}') #2 seconds
     jsonResponse = json.dumps(jsonResponse)
     logging.info(jsonResponse)
 
     response = Response(response=jsonResponse, status=200, mimetype="application/json")
-    response.headers.add('content-length', len(jsonResponse))
+    #response.headers.add('content-length', len(jsonResponse))
     return response
 
 @app.after_request
@@ -146,6 +134,6 @@ def after_request(response):
     return response
 
 if __name__ == '__main__':
-    #app.run(port=5200, debug=True, threaded=True)
+    app.run(port=5200, debug=True, threaded=True)
     #from android studio emulator
-    app.run(host="172.31.6.26", debug=True, threaded=True)
+    #app.run(host="172.31.6.26", debug=True, threaded=True)

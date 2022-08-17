@@ -10,6 +10,7 @@ from tools.train_net import model_inference, model_inference_img
 from tools.train_net import setup_model_cfg, setup_model_cfg_pred
 #config setup
 import pickle
+
 model = None #TODO
 cfg = None #TODO
 config_script = './config_init.sh'
@@ -17,7 +18,9 @@ call(['bash',config_script])
 config_dir = './server_config.pkl'
 with open(config_dir, 'rb') as file:
     cfg = pickle.load(file)
-model = setup_model_cfg_pred(cfg)
+pred = setup_model_cfg_pred(cfg)
+model = pred.model
+
 
 #test image read write
 inference_img = './datasets/custom_images/test.jpg'
@@ -45,20 +48,21 @@ def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
     #     yaml.safe_dump(cfg,ymlfile,default_flow_style=False)
     return cfg
     
-start_inf = time.time()
-cfg = set_thresholds(cfg,iou_threshold=0.3, conf_threshold=0.6)
+
 #resetup model configs with new parameters
-model = setup_model_cfg_pred(cfg)
-#get inference (can be slow)
+cfg = set_thresholds(cfg,iou_threshold=0.3, conf_threshold=0.6)
+pred = setup_model_cfg_pred(cfg)
 
-model_inference(cfg,model)
-# model_inference_img(img)
+start_inf = time.time()
+#get inference
+#model_inference(cfg,pred.model)
+result = model_inference_img(pred,img)
 
-with open(inst_file, 'r') as f:
-    annos = json.load(f)
+# with open(inst_file, 'r') as f:
+#     annos = json.load(f)
 
 #compute prediction and output real json in response
-jsonResponse = add_category_name(annos)
+jsonResponse = add_category_name(result)
 
 end_inf = time.time()
 print(f'Number of detections: {len(jsonResponse)}')
