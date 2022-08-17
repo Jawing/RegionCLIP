@@ -1,15 +1,14 @@
 # train open-vocabulary object detectors (initialized by our pretrained RegionCLIP), {RN50, RN50x4} x {COCO, LVIS}
 
-# RN50, HUMANWARE (COCO)
-python ./tools/train_net.py \
---resume \
+# RN50, HUMANWARE (Finetuned COCO)
+python3 ./tools/train_net.py \
 --num-gpus 2 \
---config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_Humanware_coco.yaml \
-MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
+--config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_Humanware_coco_s.yaml \
+MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_finetuned-coco_rn50.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_1x_ovd_FSD.yaml \
 MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
-MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
-MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
+MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5key.pth \
+MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5key.pth \
 
 #./output/concept_feats/concept_embeds_vild_rn50.pth
 # MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_vild_rn50.pth

@@ -47,6 +47,7 @@
 
 # RN50x4, HUMANWARE (Finetuned COCO)
 python3 ./tools/train_net.py \
+--resume \
 --num-gpus 2 \
 --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_Humanware_coco.yaml \
 MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_finetuned-coco_rn50x4.pth \
