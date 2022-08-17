@@ -77,7 +77,6 @@ class Predictor(DefaultPredictor):
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):
-        
             dataset_name = 'lvis_v1_val_custom_img'
             data_loader = cls.build_test_loader(cfg, dataset_name)
             evaluator = cls.build_evaluator(cfg, dataset_name)
@@ -88,7 +87,6 @@ class Predictor(DefaultPredictor):
                 if isinstance(model, nn.Module):
                     stack.enter_context(inference_context(model))
                 stack.enter_context(torch.no_grad())
-                #TODO get input directly without data_loader (dataloader )
                 for idx, inputs in enumerate(data_loader):
                     outputs = model(inputs)
                     evaluator.process(inputs, outputs)
@@ -235,7 +233,6 @@ def setup_model_cfg(cfg):
 def setup_model_cfg_pred(cfg):
     pred = Predictor(cfg)
     return pred
-#TODO test predictor
 def model_inference_img(pred,img):
     result = pred(img)
     torch.cuda.empty_cache() # 0.02 seconds
@@ -250,13 +247,7 @@ def model_inference(cfg,model):
 
 def main(args):
     cfg = setup(args) #0.03 seconds
-    #TODO save and load default config
-    # print(cfg['MODEL']['DEVICE'])
-    # cfg['MODEL']['DEVICE']='cpu'
-    # print(cfg['MODEL']['DEVICE'])
-    #print(cfg.OUTPUT_DIR)
     if args.eval_only:
-        #load model onto server to save time TODO
         model = Trainer.build_model(cfg) #1.93 seconds (2.15 seconds cpu time)     
         #important checkpointer
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
@@ -296,10 +287,6 @@ import copy
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     #print("Command Line Args:", args)
-    #TODO try to only save cfg
-    # print(type(args))
-    # args2 = copy.copy(args)
-    # args2.num_gpus=2
     launch(
         main,
         args.num_gpus,
