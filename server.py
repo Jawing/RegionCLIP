@@ -49,7 +49,7 @@ def set_thresholds(cfg,iou_threshold=0.2, conf_threshold=0.6):
 #add names to inst_file
 def add_category_name(annos):
     for anno in annos:
-        anno["category_name"] = classes[anno["category_id"]-1]
+        anno["category_name"] = classes[anno["category_id"]]
     return annos
 
 # initializations
@@ -128,12 +128,7 @@ def detect_objects():
     #response.headers.add('content-length', len(jsonResponse))
     return response
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-
 if __name__ == '__main__':
-    app.run(port=5200, debug=True, threaded=True)
+    #app.run(port=5200, debug=True, threaded=True)
     #from android studio emulator
-    #app.run(host="172.31.6.26", debug=True, threaded=True)
+    app.run(host="172.31.6.26", debug=True, threaded=True)
