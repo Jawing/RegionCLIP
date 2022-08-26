@@ -15,6 +15,9 @@ from detectron2.utils.logger import _log_api_usage
 
 __all__ = ["HookBase", "TrainerBase", "SimpleTrainer", "AMPTrainer"]
 
+#mlflow logging
+import mlflow
+import mlflow.sklearn
 
 class HookBase:
     """
@@ -144,14 +147,33 @@ class TrainerBase:
         with EventStorage(start_iter) as self.storage:
             try:
                 self.before_train()
-                for self.iter in range(start_iter, max_iter):
-                    self.before_step()
-                    self.run_step()
-                    self.after_step()
-                # self.iter == max_iter can be used by `after_train` to
-                # tell whether the training successfully finished or failed
-                # due to exceptions.
-                self.iter += 1
+                #log with mlflow
+
+                with mlflow.start_run():
+                    #log important config parameters
+                    mlflow.log_param("max iter",self.cfg['SOLVER']['MAX_ITER'])
+                    mlflow.log_param("warmup iter",self.cfg['SOLVER']['WARMUP_ITERS'])
+                    mlflow.log_param("start lr",self.cfg['SOLVER']['BASE_LR'])
+                    mlflow.log_param("lr step reduction",self.cfg['SOLVER']['STEPS'])
+                    mlflow.log_param("batch size",self.cfg['SOLVER']['IMS_PER_BATCH'])
+
+                    mlflow.log_param("number of classes",self.cfg['MODEL']['ROI_HEADS']['NUM_CLASSES'])
+                    mlflow.log_param("background loss weight",self.cfg['MODEL']['CLIP']['BG_CLS_LOSS_WEIGHT'])
+                    mlflow.log_param("focal loss gamma",self.cfg['MODEL']['CLIP']['FOCAL_SCALED_LOSS'])
+                    mlflow.log_param("focal loss alpha",self.cfg['MODEL']['CLIP']['FOCAL_SCALED_LOSS_ALPHA'])
+                    mlflow.log_param("eval period",self.cfg['TEST']['EVAL_PERIOD'])
+                    mlflow.log_param("rotation aug",self.cfg['INPUT']['ROT']['ENABLED'])
+                    mlflow.log_param("flip aug",self.cfg['INPUT']['RANDOM_FLIP'])                    
+
+                    for self.iter in range(start_iter, max_iter):
+                        mlflow.log_metric("lr",self.scheduler.base_lrs[0])
+                        self.before_step()
+                        self.run_step()
+                        self.after_step()
+                    # self.iter == max_iter can be used by `after_train` to
+                    # tell whether the training successfully finished or failed
+                    # due to exceptions.
+                    self.iter += 1
             except Exception:
                 logger.exception("Exception during training:")
                 raise
@@ -334,6 +356,11 @@ class SimpleTrainer(TrainerBase):
             storage.put_scalar("{}total_loss".format(prefix), total_losses_reduced)
             if len(metrics_dict) > 1:
                 storage.put_scalars(**metrics_dict)
+
+            mlflow.log_metric("total loss",total_losses_reduced)
+            mlflow.log_metric("class loss",metrics_dict['loss_cls'])
+            mlflow.log_metric("box reg loss",metrics_dict['loss_box_reg'])
+            
 
     def state_dict(self):
         ret = super().state_dict()

@@ -24,7 +24,7 @@ from detectron2.utils.events import EventStorage, EventWriter
 from detectron2.utils.file_io import PathManager
 
 from .train_loop import HookBase
-
+import mlflow
 __all__ = [
     "CallbackHook",
     "IterationTimer",
@@ -475,6 +475,20 @@ class EvalHook(HookBase):
         # Evaluation may take different time among workers.
         # A barrier make them start the next iteration together.
         comm.synchronize()
+        #log evaluation metrics
+        #print(results['bbox']['AP'])
+        mlflow.log_metric("mAP",results['bbox']['AP'])
+        mlflow.log_metric("AP50",results['bbox']['AP50'])
+        mlflow.log_metric("AP75",results['bbox']['AP75'])
+        mlflow.log_metric("APs",results['bbox']['APs'])
+        mlflow.log_metric("APm",results['bbox']['APm'])
+        mlflow.log_metric("APl",results['bbox']['APl'])
+        mlflow.log_metric("AP elevator doors",results['bbox']['AP-elevator doors'])
+        mlflow.log_metric("AP keychain",results['bbox']['AP-keychain'])
+        mlflow.log_metric("AP Trash can",results['bbox']['AP-Trash can'])
+        mlflow.log_metric("AP wallet",results['bbox']['AP-wallet'])
+        mlflow.log_metric("AP Wall_outlet",results['bbox']['AP-Wall_outlet'])
+
 
     def after_step(self):
         next_iter = self.trainer.iter + 1

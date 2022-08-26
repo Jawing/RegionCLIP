@@ -69,6 +69,10 @@ _C.INPUT.CROP.TYPE = "relative_range"
 # pixels if CROP.TYPE is "absolute"
 _C.INPUT.CROP.SIZE = [0.9, 0.9]
 
+# `True` if rotations are used for data augmentation during training
+_C.INPUT.ROT = CN({"ENABLED": False})
+_C.INPUT.ROT.TYPE = "choice"
+_C.INPUT.ROT.RANGE = [90, 180, 270]
 
 # Whether the model needs RGB, YUV, HSV etc.
 # Should be one of the modes defined here, as we use PIL to read the image:

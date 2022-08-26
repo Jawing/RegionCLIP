@@ -10,6 +10,10 @@ from detectron2.config import configurable
 from . import detection_utils as utils
 from . import transforms as T
 
+import albumentations as A
+from detectron2.data.transforms import AlbumentationsWrapper
+from detectron2.data.transforms import CopyPaste
+
 """
 This file contains the default mapping that's applied to "dataset dicts".
 """
@@ -96,6 +100,12 @@ class DatasetMapper:
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
+        #add augmentations (add copy past and albumentations transformations)
+        if cfg.INPUT.ROT.ENABLED and is_train:
+            augs.append(T.RandomRotation(cfg.INPUT.ROT.RANGE, expand=True, center=None, sample_style=cfg.INPUT.ROT.TYPE, interp=None))
+        
+        #add additional Albumentation Augmentations
+        #augs.append(AlbumentationsWrapper(A.RandomBrightnessContrast(p=1)))
 
         ret = {
             "is_train": is_train,

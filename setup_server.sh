@@ -18,7 +18,10 @@ python3 -m pip install -e RegionCLIP
 pip install opencv-python timm diffdist h5py sklearn ftfy
 pip install git+https://github.com/lvis-dataset/lvis-api.git
 pip install git+https://github.com/Jawing/object_detection_metrics.git
-pip install shapely
+pip install shapely==1.8.2
+pip install albumentations==1.2.1
+pip install mlflow
+
 #python3 -m pip install -r ./RegionCLIP/requirements.txt
 
 #put images here for inference

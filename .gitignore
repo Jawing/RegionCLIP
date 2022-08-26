@@ -63,6 +63,8 @@ _darcs
 /projects/*/datasets
 /models
 /snippet
+/mlruns
 
 #server log
 flask.log
+

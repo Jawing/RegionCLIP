@@ -31,12 +31,11 @@ python3 ./tools/train_net.py \
 --eval-only  \
 --num-gpus 1 \
 --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_Humanware_coco_eval.yaml \
-MODEL.WEIGHTS ./output/model_final_coco_28000_nnlocal.pth \
-MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
-MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50_NN_local.pth \
+MODEL.WEIGHTS ./models/model_best_small_75000.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_1x_ovd_FSD.yaml \
 MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
-MODEL.ROI_HEADS.SOFT_NMS_ENABLED True \
+MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5key.pth \
+MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5key.pth \
 
 # RN50, HUMANWARE (LVIS) finetuned humanware
 # python3 ./tools/train_net.py \

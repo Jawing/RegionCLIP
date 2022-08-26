@@ -11,3 +11,6 @@ MODEL:
 DATASETS:
   TEST: ("lvis_v1_val_custom_img",)
   TRAIN: ("lvis_v1_train_custom_img",)
+#change the number of detections output
+# TEST:
+#   DETECTIONS_PER_IMAGE: 1000 #default 100

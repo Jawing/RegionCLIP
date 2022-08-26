@@ -12,8 +12,8 @@ gt_basicVal_json = './datasets/humanware/annotations/instances_val_basic.json'
 #result_lvis_json = './output/inference/lvis_instances_results.json'
 
 #define output coco json and ground true below
-result_coco_json = './output/inference/coco_instances_results_full_basic.json'
-basic = True
+result_coco_json = './output/inference/coco_instances_results_full_small_hw.json'
+basic = False
 val = False
 
 

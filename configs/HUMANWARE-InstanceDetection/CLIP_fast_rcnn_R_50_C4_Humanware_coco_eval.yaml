@@ -12,3 +12,7 @@ MODEL:
 DATASETS:
   TRAIN: ("humanware_train_full",)
   TEST: ("humanware_test_basic",)
+#   TEST: ("humanware_test_basic",)
+#   TEST: ("humanware_test_collected",)
+#   TEST: ("humanware_test_full",)
+#   TEST: ("humanware_val_full",)
