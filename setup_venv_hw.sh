@@ -19,8 +19,15 @@ python3 -m pip install -e RegionCLIP
 pip install opencv-python timm diffdist h5py sklearn ftfy
 pip install git+https://github.com/lvis-dataset/lvis-api.git
 pip install git+https://github.com/Jawing/object_detection_metrics.git
-pip install shapely
+pip install shapely==1.8.2
 #python3 -m pip install -r ./RegionCLIP/requirements.txt
+
+pip install albumentations==1.2.1
+#mlflow setup for training experiments
+pip install mlflow
+# Set the experiment via environment variables
+export MLFLOW_EXPERIMENT_NAME=RegionCLIP-whereismystuff
+mlflow experiments create --experiment-name RegionCLIP-whereismystuff
 
 #put images here for inference
 mkdir ./RegionCLIP/datasets/custom_images

@@ -4,8 +4,8 @@ from fvcore.transforms.transform import *
 from .transform import *
 from .augmentation import *
 from .augmentation_impl import *
-from .albumentations import *
-from .copy_paste import *
+from .albumentations import AlbumentationsWrapper
+from .copy_paste import CopyPaste
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
 

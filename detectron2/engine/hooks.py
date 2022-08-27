@@ -259,22 +259,39 @@ class BestCheckpointer(HookBase):
             return
         else:
             latest_metric, metric_iter = metric_tuple
-
+        cpname = f"{self._file_prefix}_{metric_iter:07d}"
+        basename = "{}.pth".format(cpname)
+        save_file = os.path.join(self._checkpointer.save_dir, basename)
         if self.best_metric is None:
             if self._update_best(latest_metric, metric_iter):
                 additional_state = {"iteration": metric_iter}
-                self._checkpointer.save(f"{self._file_prefix}", **additional_state)
+                self._checkpointer.save(cpname, **additional_state)
                 self._logger.info(
                     f"Saved first model at {self.best_metric:0.5f} @ {self.best_iter} steps"
                 )
+                #save model checkpoint to mlflow from file
+                mlflow.log_artifact(save_file, artifact_path="model_checkpoint")
+                mlflow.log_metric("best iters",self.best_iter+1,step=self.best_iter+1)
+
+                # #manual save checkpoint not from file (compared to above) REMEMBER TO COPY BELOW if use
+                # data = {}
+                # data["model"] = self._checkpointer.model.state_dict()
+                # for key, obj in self._checkpointer.checkpointables.items():
+                #     data[key] = obj.state_dict()
+                # data.update(additional_state)
+                # mlflow.pytorch.log_state_dict(data, "checkpoint")
+
         elif self._compare(latest_metric, self.best_metric):
             additional_state = {"iteration": metric_iter}
-            self._checkpointer.save(f"{self._file_prefix}", **additional_state)
+            self._checkpointer.save(cpname, **additional_state)
             self._logger.info(
                 f"Saved best model as latest eval score for {self._val_metric} is"
                 f"{latest_metric:0.5f}, better than last best score "
                 f"{self.best_metric:0.5f} @ iteration {self.best_iter}."
             )
+            #save model checkpoint to mlflow from file
+            mlflow.log_artifact(save_file, artifact_path="model_checkpoint")
+            mlflow.log_metric("best iters",self.best_iter+1,step=self.best_iter+1)
             self._update_best(latest_metric, metric_iter)
         else:
             self._logger.info(
@@ -477,17 +494,18 @@ class EvalHook(HookBase):
         comm.synchronize()
         #log evaluation metrics
         #print(results['bbox']['AP'])
-        mlflow.log_metric("mAP",results['bbox']['AP'])
-        mlflow.log_metric("AP50",results['bbox']['AP50'])
-        mlflow.log_metric("AP75",results['bbox']['AP75'])
-        mlflow.log_metric("APs",results['bbox']['APs'])
-        mlflow.log_metric("APm",results['bbox']['APm'])
-        mlflow.log_metric("APl",results['bbox']['APl'])
-        mlflow.log_metric("AP elevator doors",results['bbox']['AP-elevator doors'])
-        mlflow.log_metric("AP keychain",results['bbox']['AP-keychain'])
-        mlflow.log_metric("AP Trash can",results['bbox']['AP-Trash can'])
-        mlflow.log_metric("AP wallet",results['bbox']['AP-wallet'])
-        mlflow.log_metric("AP Wall_outlet",results['bbox']['AP-Wall_outlet'])
+        if "bbox" in results: #if condition added for multiprocess instances
+            mlflow.log_metric("mAP",results['bbox']['AP'], step=self.trainer.iter+1)
+            mlflow.log_metric("AP50",results['bbox']['AP50'],  step=self.trainer.iter+1)
+            mlflow.log_metric("AP75",results['bbox']['AP75'], step=self.trainer.iter+1)
+            mlflow.log_metric("APs",results['bbox']['APs'], step=self.trainer.iter+1)
+            mlflow.log_metric("APm",results['bbox']['APm'], step=self.trainer.iter+1)
+            mlflow.log_metric("APl",results['bbox']['APl'], step=self.trainer.iter+1)
+            mlflow.log_metric("AP elevator doors",results['bbox']['AP-elevator doors'],step=self.trainer.iter+1)
+            mlflow.log_metric("AP keychain",results['bbox']['AP-keychain'],step=self.trainer.iter+1)
+            mlflow.log_metric("AP Trash can",results['bbox']['AP-Trash can'],step=self.trainer.iter+1)
+            mlflow.log_metric("AP wallet",results['bbox']['AP-wallet'],step=self.trainer.iter+1)
+            mlflow.log_metric("AP Wall_outlet",results['bbox']['AP-Wall_outlet'],step=self.trainer.iter+1)
 
 
     def after_step(self):

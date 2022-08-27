@@ -42,7 +42,7 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 #os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
-
+import mlflow
 class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains pre-defined default logic for
@@ -155,13 +155,15 @@ def main(args):
     consider writing your own training loop (see plain_train_net.py) or
     subclassing the trainer.
     """
-    trainer = Trainer(cfg)
-    trainer.resume_or_load(resume=args.resume)
-    if cfg.TEST.AUG.ENABLED:
-        trainer.register_hooks(
-            [hooks.EvalHook(0, lambda: trainer.test_with_TTA(cfg, trainer.model))]
-        )
-    return trainer.train()
+    #start logging with mlflow
+    with mlflow.start_run():
+        trainer = Trainer(cfg)
+        trainer.resume_or_load(resume=args.resume)
+        if cfg.TEST.AUG.ENABLED:
+            trainer.register_hooks(
+                [hooks.EvalHook(0, lambda: trainer.test_with_TTA(cfg, trainer.model))]
+            )
+        return trainer.train()
 
 
 if __name__ == "__main__":

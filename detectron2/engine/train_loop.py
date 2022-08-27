@@ -146,10 +146,10 @@ class TrainerBase:
 
         with EventStorage(start_iter) as self.storage:
             try:
-                self.before_train()
-                #log with mlflow
+                    self.before_train()
+                
 
-                with mlflow.start_run():
+                
                     #log important config parameters
                     mlflow.log_param("max iter",self.cfg['SOLVER']['MAX_ITER'])
                     mlflow.log_param("warmup iter",self.cfg['SOLVER']['WARMUP_ITERS'])
@@ -163,10 +163,12 @@ class TrainerBase:
                     mlflow.log_param("focal loss alpha",self.cfg['MODEL']['CLIP']['FOCAL_SCALED_LOSS_ALPHA'])
                     mlflow.log_param("eval period",self.cfg['TEST']['EVAL_PERIOD'])
                     mlflow.log_param("rotation aug",self.cfg['INPUT']['ROT']['ENABLED'])
+                    mlflow.log_param("rotation aug range",self.cfg['INPUT']['ROT']['RANGE'])
                     mlflow.log_param("flip aug",self.cfg['INPUT']['RANDOM_FLIP'])                    
-
+                    mlflow.pytorch.log_model(self.model,"model")
+                    
                     for self.iter in range(start_iter, max_iter):
-                        mlflow.log_metric("lr",self.scheduler.base_lrs[0])
+                        mlflow.log_metric("lr",self.scheduler._last_lr[0],step=self.iter)
                         self.before_step()
                         self.run_step()
                         self.after_step()
@@ -357,9 +359,9 @@ class SimpleTrainer(TrainerBase):
             if len(metrics_dict) > 1:
                 storage.put_scalars(**metrics_dict)
 
-            mlflow.log_metric("total loss",total_losses_reduced)
-            mlflow.log_metric("class loss",metrics_dict['loss_cls'])
-            mlflow.log_metric("box reg loss",metrics_dict['loss_box_reg'])
+            mlflow.log_metric("total loss",total_losses_reduced,step=self.iter)
+            mlflow.log_metric("class loss",metrics_dict['loss_cls'],step=self.iter)
+            mlflow.log_metric("box reg loss",metrics_dict['loss_box_reg'],step=self.iter)
             
 
     def state_dict(self):
