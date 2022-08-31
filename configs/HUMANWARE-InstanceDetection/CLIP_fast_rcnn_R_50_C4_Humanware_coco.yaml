@@ -21,7 +21,7 @@ SOLVER:
   CHECKPOINT_PERIOD: 2500
 INPUT:
   ROT:
-    ENABLED: true
+    ENABLED: false
     TYPE: "choice"
     RANGE: [90,180,270]
   RANDOM_FLIP: "horizontal"
