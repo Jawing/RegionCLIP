@@ -125,10 +125,16 @@ def detect_objects():
     logging.info(jsonResponse)
 
     response = Response(response=jsonResponse, status=200, mimetype="application/json")
-    #response.headers.add('content-length', len(jsonResponse))
+    # response.headers.add('content-length', len(jsonResponse))
     return response
+
+# @app.after_request
+# def after_request(response):
+#     response.headers.add('Access-Control-Allow-Origin', '*')
+#     return response
 
 if __name__ == '__main__':
     #app.run(port=5200, debug=True, threaded=True)
     #from android studio emulator
     app.run(host="172.31.6.26", debug=True, threaded=True)
+    #app.run(host="35.183.171.186", debug=True, threaded=True)
