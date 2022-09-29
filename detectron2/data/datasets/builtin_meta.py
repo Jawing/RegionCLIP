@@ -489,6 +489,7 @@ def _get_coco_panoptic_separated_meta():
     ret.update(_get_coco_instances_meta())
     return ret
 
+import os
 
 def _get_builtin_metadata(dataset_name):
     if dataset_name == "coco":
@@ -557,12 +558,27 @@ def _get_builtin_metadata(dataset_name):
             "thing_classes": CITYSCAPES_THING_CLASSES,
             "stuff_classes": CITYSCAPES_STUFF_CLASSES,
         }
-    elif dataset_name == "humanware":
+    #extra classes humanware
+    elif dataset_name == "humanware_c":
+        concept_feats = []
+        concept_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../labels_5class_c.txt")
+        with open(concept_file, 'r') as f:
+            for line in f:
+                concept_feats.append(line.strip())
         return {
-                "thing_classes": ["elevator doors", "keychain", "Trash can", "wallet", "Wall_outlet" ],
+                "thing_classes": concept_feats,
                 #"stuff_classes": []
                 }
-
+    elif dataset_name == "humanware":
+        concept_feats = []
+        concept_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../labels_5class.txt")
+        with open(concept_file, 'r') as f:
+            for line in f:
+                concept_feats.append(line.strip())
+        return {
+                "thing_classes": concept_feats,
+                #"stuff_classes": []
+                }
 
 
 

@@ -121,6 +121,8 @@ class CLIPFastRCNN(nn.Module):
                 offline_cfg.MODEL.RPN.NMS_THRESH = cfg.MODEL.CLIP.OFFLINE_RPN_NMS_THRESH  # 0.9
             if cfg.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TEST:
                 offline_cfg.MODEL.RPN.POST_NMS_TOPK_TEST = cfg.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TEST # 1000
+            if cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST:
+                offline_cfg.MODEL.RPN.PRE_NMS_TOPK_TEST = cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST # 6000
 
             # create offline backbone and RPN
             offline_backbone = build_backbone(offline_cfg)
@@ -264,7 +266,7 @@ class CLIPFastRCNN(nn.Module):
             Otherwise, a list[Instances] containing raw network outputs.
         """
         assert not self.training
-        
+        print(batched_inputs[0]["file_name"])
         # localization branch: offline modules to get the region proposals
         if self.clip_crop_region_type == "GT":  # from ground-truth
             proposals = []

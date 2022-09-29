@@ -2,7 +2,7 @@ _BASE_: "./CLIP_fast_rcnn_R_50_C4.yaml"
 MODEL:
   MASK_ON: False
   ROI_HEADS:
-    NUM_CLASSES: 6
+    NUM_CLASSES: 5
     NMS_THRESH_TEST: 0.5
   CLIP:
     NO_BOX_DELTA: True

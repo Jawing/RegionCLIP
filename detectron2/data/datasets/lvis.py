@@ -243,8 +243,13 @@ def get_lvis_instances_meta(dataset_name):
     raise ValueError("No built-in metadata for dataset {}".format(dataset_name))
 
 def _get_humanware_instances_meta():
+    concept_feats = []
+    concept_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../labels_5class.txt")
+    with open(concept_file, 'r') as f:
+        for line in f:
+            concept_feats.append(line.strip())
     return {
-    "thing_classes": ["elevator doors", "keychain", "Trash can", "wallet", "Wall_outlet" ],
+    "thing_classes": concept_feats,
     #"stuff_classes": []
     }
 

@@ -57,6 +57,8 @@ def fast_rcnn_inference(
     topk_per_image: int,
     scores_bf_multiply: List[torch.Tensor],
     vis=False,
+    bg_cls_scores=False,
+    cls_id_nms=False,
 ):
     """
     Call `fast_rcnn_inference_single_image` for all images.
@@ -90,7 +92,7 @@ def fast_rcnn_inference(
     result_per_image = [
         fast_rcnn_inference_single_image(
             boxes_per_image, scores_per_image, image_shape, score_thresh, nms_thresh, 
-            soft_nms_enabled, soft_nms_method, soft_nms_sigma, soft_nms_prune, topk_per_image, s_bf_per_img, vis
+            soft_nms_enabled, soft_nms_method, soft_nms_sigma, soft_nms_prune, topk_per_image, s_bf_per_img, vis, bg_cls_scores,cls_id_nms,
         )
         for scores_per_image, boxes_per_image, image_shape, s_bf_per_img in zip(scores, boxes, image_shapes, scores_bf_multiply)
     ]
@@ -141,6 +143,8 @@ def fast_rcnn_inference_single_image(
     topk_per_image: int,
     scores_bf_multiply: List[torch.Tensor],
     vis=False,
+    bg_cls_scores=False,
+    cls_id_nms=False,
 ):
     """
     Single-image inference. Return bounding-box detection results by thresholding
@@ -159,8 +163,32 @@ def fast_rcnn_inference_single_image(
         scores = scores[valid_mask]
         scores_bf_multiply = scores_bf_multiply[valid_mask]
 
+    #return unfiltered sorted scores with background class
+
+    #return all scores from RPN if get bg_cls_boxes
+    if bg_cls_scores:
+        original_scores = scores.detach().clone()
+        #exclude background classes
+        scores = scores[:, :-1]
+        scores_bf_multiply = scores_bf_multiply[:, :-1]
+
+        result = Instances(image_shape)
+        result.pred_boxes = Boxes(boxes)
+        scores_max, idx_max = scores.max(dim=1)
+        scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx_max]
+        result.scores = scores_max
+        if vis: # visualization: convert to the original scores before multiplying RPN scores
+            result.scores = scores_bf_multiply         
+        result.pred_classes = idx_max
+        result.all_scores = original_scores
+        return result, torch.arange(len(scores))
+
+    original_scores = scores.detach().clone()
+    #comment out to get nms including background class
     scores = scores[:, :-1]
     scores_bf_multiply = scores_bf_multiply[:, :-1]
+
+    print("before adding dup: ",scores.size(0))
     num_bbox_reg_classes = boxes.shape[1] // 4
     # Convert to Boxes to use the `clip` function ...
     boxes = Boxes(boxes.reshape(-1, 4))
@@ -179,10 +207,47 @@ def fast_rcnn_inference_single_image(
         boxes = boxes[filter_mask]
     scores = scores[filter_mask]
     scores_bf_multiply = scores_bf_multiply[filter_mask]
+    original_scores = original_scores[filter_inds[:, 0],:]
+    #preprocess scores
+    #sort by scores
+    scores, idx = scores.sort(descending=True,dim=0)
+    boxes = boxes[idx]  # topk x 1 x 4
+    scores_bf_multiply= scores_bf_multiply[idx]
+    original_scores= original_scores[idx]
+    filter_inds=filter_inds[idx]
+    print("after score filter with dups: ",len(scores))
+
+
+    #remove list of duplicates index (overlapping boxes only keep the top scoring class)
+    #no need to remove if offline nms = classification nms
+    inds_temp = filter_inds[:, 0].tolist()
+    # print(filter_inds[:, 0])
+    # print(filter_inds)
+    dup_idx = [idx for idx, item in enumerate(inds_temp) if item in inds_temp[:idx]]
+    mask = torch.ones(len(inds_temp),dtype=torch.bool)
+    mask[dup_idx] = 0
+    # print(filter_inds[mask, 0])
+    # print(filter_inds[mask])
+    boxes, scores, filter_inds = boxes[mask], scores[mask], filter_inds[mask]
+    scores_bf_multiply = scores_bf_multiply[mask]
+    original_scores = original_scores[mask]    
+    #they must equal
+    assert len(filter_inds[:, 0]) == len(set(inds_temp))
+    print("after dup removal: ",len(scores))
+
 
     # 2. Apply NMS for each class independently.
+    #nms function indices already sorted in keep (nms is independ between categories, eg some boxes may overlap, multiclass nms)
+    #nms filters again even if same threshold on new boxes after box delta transform (can reoverlap) MODEL.CLIP.NO_BOX_DELTA = False
+    #nms filter doesnt do anything if NO_BOX_DELTA and nms offline = nms classification head
+    
+    #set class independent nms
+    if cls_id_nms:
+        lvl = torch.zeros_like(filter_inds[:, 1])
+    else:
+        lvl = filter_inds[:, 1]
     if not soft_nms_enabled:
-        keep = batched_nms(boxes, scores, filter_inds[:, 1], nms_thresh)
+        keep = batched_nms(boxes, scores, lvl, nms_thresh)
     else:
         keep, soft_nms_scores = batched_soft_nms(
             boxes,
@@ -200,6 +265,8 @@ def fast_rcnn_inference_single_image(
         keep = keep[:topk_per_image]
     boxes, scores, filter_inds = boxes[keep], scores[keep], filter_inds[keep]
     scores_bf_multiply = scores_bf_multiply[keep]
+    original_scores = original_scores[keep]
+    print("after nms: ",len(scores))
 
     result = Instances(image_shape)
     result.pred_boxes = Boxes(boxes)
@@ -207,6 +274,15 @@ def fast_rcnn_inference_single_image(
     if vis: # visualization: convert to the original scores before multiplying RPN scores
         result.scores = scores_bf_multiply         
     result.pred_classes = filter_inds[:, 1]
+    #check if all filtered bboxes are unique (should give error most likely with batchednms)
+    print("unique boxes: ", len(set(filter_inds[:, 0].tolist())))
+    assert len(filter_inds[:, 0]) == len(set(filter_inds[:, 0].tolist()))
+    
+    result.all_scores = original_scores
+    # _, idx_max = result.all_scores.max(dim=1)
+    # #they must equal (if original_scores excludes bg)
+    # assert torch.equal(idx_max,result.pred_classes)
+
     return result, filter_inds[:, 0]
 
 
@@ -397,6 +473,8 @@ class FastRCNNOutputLayers(nn.Module):
         bg_cls_loss_weight: None,
         multiply_rpn_score: tuple = (False, False),
         openset_test: None,
+        bg_cls_scores: bool = False,
+        cls_id_nms: bool = False,
     ):
         """
         NOTE: this interface is experimental.
@@ -431,7 +509,8 @@ class FastRCNNOutputLayers(nn.Module):
         if isinstance(loss_weight, float):
             loss_weight = {"loss_cls": loss_weight, "loss_box_reg": loss_weight}
         self.loss_weight = loss_weight
-
+        self.bg_cls_scores = bg_cls_scores
+        self.cls_id_nms = cls_id_nms
         # RegionCLIP
         self.num_classes = num_classes
         if isinstance(input_shape, int):  # some backward compatibility
@@ -522,6 +601,8 @@ class FastRCNNOutputLayers(nn.Module):
             "clip_cls_emb"          : (cfg.MODEL.CLIP.USE_TEXT_EMB_CLASSIFIER, cfg.MODEL.CLIP.TEXT_EMB_PATH, cfg.MODEL.ROI_HEADS.NAME, cfg.MODEL.CLIP.TEXT_EMB_DIM),
             "no_box_delta"          : cfg.MODEL.CLIP.NO_BOX_DELTA or cfg.MODEL.CLIP.CROP_REGION_TYPE == 'GT',
             "bg_cls_loss_weight"    : cfg.MODEL.CLIP.BG_CLS_LOSS_WEIGHT,
+            "bg_cls_scores"         : cfg.MODEL.CLIP.BG_CLS_SCORE,
+            "cls_id_nms"         : cfg.MODEL.CLIP.CLS_ID_NMS,
             "multiply_rpn_score"    : (cfg.MODEL.CLIP.MULTIPLY_RPN_SCORE, cfg.MODEL.CLIP.VIS),
             "openset_test"          : (cfg.MODEL.CLIP.OPENSET_TEST_NUM_CLASSES, cfg.MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH, \
                                        cfg.MODEL.CLIP.CLSS_TEMP, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA)
@@ -730,6 +811,8 @@ class FastRCNNOutputLayers(nn.Module):
             self.test_topk_per_image,
             scores_bf_multiply = scores_bf_multiply,
             vis = True if self.vis else False,
+            bg_cls_scores = self.bg_cls_scores,
+            cls_id_nms = self.cls_id_nms,
         )
 
     def predict_boxes_for_gt_classes(self, predictions, proposals):

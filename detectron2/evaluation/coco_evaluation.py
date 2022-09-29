@@ -408,7 +408,10 @@ def instances_to_coco_json(instances, img_id):
     boxes = boxes.tolist()
     scores = instances.scores.tolist()
     classes = instances.pred_classes.tolist()
-
+    try:
+        all_scores = instances.all_scores.tolist()
+    except Exception as e:
+        all_scores = None
     has_mask = instances.has("pred_masks")
     if has_mask:
         # use RLE to encode the masks, because they are too large and takes memory
@@ -430,12 +433,21 @@ def instances_to_coco_json(instances, img_id):
 
     results = []
     for k in range(num_instance):
-        result = {
-            "image_id": img_id,
-            "category_id": classes[k],
-            "bbox": boxes[k],
-            "score": scores[k],
-        }
+        if all_scores:
+            result = {
+                "image_id": img_id,
+                "category_id": classes[k],
+                "bbox": boxes[k],
+                "score": scores[k],
+                "all_scores": all_scores[k],
+            }
+        else:
+            result = {
+                "image_id": img_id,
+                "category_id": classes[k],
+                "bbox": boxes[k],
+                "score": scores[k],
+            }
         if has_mask:
             result["segmentation"] = rles[k]
         if has_keypoints:

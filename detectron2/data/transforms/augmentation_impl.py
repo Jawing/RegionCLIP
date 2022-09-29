@@ -191,8 +191,8 @@ class ResizeScale(Augmentation):
         self,
         min_scale: float,
         max_scale: float,
-        target_height: int,
-        target_width: int,
+        target_height: int = None,
+        target_width: int = None,
         interp: int = Image.BILINEAR,
     ):
         """
@@ -209,7 +209,10 @@ class ResizeScale(Augmentation):
     def get_transform(self, image: np.ndarray) -> Transform:
         # Compute the image scale and scaled size.
         input_size = image.shape[:2]
-        output_size = (self.target_height, self.target_width)
+        if self.target_height == None or self.target_height == None:
+            output_size = (input_size[0], input_size[1])
+        else:  
+            output_size = (self.target_height, self.target_width)
         random_scale = np.random.uniform(self.min_scale, self.max_scale)
         random_scale_size = np.multiply(output_size, random_scale)
         scale = np.minimum(

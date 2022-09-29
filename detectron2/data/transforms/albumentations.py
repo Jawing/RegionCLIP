@@ -1,6 +1,7 @@
 import numpy as np
 from detectron2.data.transforms import Augmentation
 from fvcore.transforms.transform import Transform, NoOpTransform
+from albumentations.core.bbox_utils import denormalize_bbox, normalize_bbox
 
 
 class AlbumentationsTransform(Transform):
@@ -16,6 +17,43 @@ class AlbumentationsTransform(Transform):
 
     def apply_box(self, box: np.ndarray) -> np.ndarray:
         try:
+            # if box.shape[0] > 1:
+            #     print('more than 1 bbox')
+            norm_bboxes = []
+            denorm_bboxes = []
+            height = self.params['rows']
+            width = self.params['cols']
+            print(str(self.aug.__class__))
+            #TODO pass in all bbox coordinates as albumentation format
+            #custom classes for albumentations need to be converted to albumentation bbox normalized format
+            #if first box is in albumentations format, rest will be as well assume
+            if box[0].sum() > 4 and 'PadIfNeeded' in str(self.aug.__class__):
+                for b in box:
+                    norm_bboxes.append(normalize_bbox(b.tolist(),height,width))
+                ret = self.aug.apply_to_bboxes(norm_bboxes, **self.params)
+                height = self.params['rows']+self.params['pad_top']+self.params['pad_bottom']
+                width = self.params['cols']+self.params['pad_left']+self.params['pad_right']
+                for d in ret:
+                    denorm_bboxes.append(list(denormalize_bbox(d,height,width)))
+                return np.array(denorm_bboxes)
+            if box[0].sum() > 4 and 'RandomCrop' in str(self.aug.__class__):
+                for b in box:
+                    norm_bboxes.append(normalize_bbox(b.tolist(),height,width))
+                ret = self.aug.apply_to_bboxes(norm_bboxes, **self.params)
+                height = self.aug.height
+                width = self.aug.width
+                for d in ret:
+                    denorm_bboxes.append(list(denormalize_bbox(d,height,width)))
+                return np.array(denorm_bboxes)
+            if box[0].sum() > 4 and 'RandomScale' in str(self.aug.__class__):
+                for b in box:
+                    norm_bboxes.append(normalize_bbox(b.tolist(),height,width))
+                ret = self.aug.apply_to_bboxes(norm_bboxes, **self.params)
+                height = int((self.params['rows']*self.params['scale'])+0.5)
+                width = int((self.params['cols']*self.params['scale'])+0.5)
+                for d in ret:
+                    denorm_bboxes.append(list(denormalize_bbox(d,height,width)))
+                return np.array(denorm_bboxes)
             return np.array(self.aug.apply_to_bboxes(box.tolist(), **self.params))
         except AttributeError:
             return box

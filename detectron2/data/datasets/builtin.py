@@ -99,9 +99,25 @@ _PREDEFINED_SPLITS_COCO["humanware"] = {
     "humanware_test_awake": ("humanware/test_awake", "humanware/annotations/instances_test_awake.json"),
     "humanware_test_basic": ("humanware/test_basic", "humanware/annotations/instances_test_basic.json"),
     "humanware_test_collected": ("humanware/test_collected", "humanware/annotations/instances_test_collected.json"),
+    "humanware_test_custom": ("humanware/test_custom", "humanware/annotations/instances_test_custom.json"),
+    
+}
+
+_PREDEFINED_SPLITS_COCO["humanware_c"] = {
+    #set with extra class labels added
+    "humanware_train_full_c": ("humanware/train_full", "humanware/annotations/instances_train_full_c.json"),
+    "humanware_train_awake_c": ("humanware/train_awake", "humanware/annotations/instances_train_awake_c.json"),
+    "humanware_train_basic_c": ("humanware/train_basic", "humanware/annotations/instances_train_basic_c.json"),
+
+    "humanware_val_full_c": ("humanware/val_full", "humanware/annotations/instances_val_full_c.json"),
+    "humanware_val_awake_c": ("humanware/val_awake", "humanware/annotations/instances_val_awake_c.json"),
+    "humanware_val_basic_c": ("humanware/val_basic", "humanware/annotations/instances_val_basic_c.json"),
+
+    "humanware_test_full_c": ("humanware/test_full", "humanware/annotations/instances_test_full_c.json"),
+    "humanware_test_awake_c": ("humanware/test_awake", "humanware/annotations/instances_test_awake_c.json"),
+    "humanware_test_basic_c": ("humanware/test_basic", "humanware/annotations/instances_test_basic_c.json"),
+    "humanware_test_collected_c": ("humanware/test_collected", "humanware/annotations/instances_test_collected_c.json"),
     }
-
-
 
 _PREDEFINED_SPLITS_COCO_PANOPTIC = {
     "coco_2017_train_panoptic": (

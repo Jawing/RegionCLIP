@@ -257,6 +257,7 @@ def transform_proposals(dataset_dict, image_shape, transforms, *, proposal_topk,
         proposals.objectness_logits = objectness_logits[:proposal_topk]
         dataset_dict["proposals"] = proposals
 
+from albumentations.core.bbox_utils import denormalize_bbox, normalize_bbox
 
 def transform_instance_annotations(
     annotation, transforms, image_size, *, keypoint_hflip_indices=None
@@ -296,8 +297,13 @@ def transform_instance_annotations(
         transforms = T.TransformList(transforms)
     # bbox is 1d (per-instance bounding box)
     bbox = BoxMode.convert(annotation["bbox"], annotation["bbox_mode"], BoxMode.XYXY_ABS)
+    # height = transforms[0].params['rows']
+    # width = transforms[0].params['cols']
+    # bbox = normalize_bbox(bbox,height,width)
     # clip transformed bbox to image size
     bbox = transforms.apply_box(np.array([bbox]))[0].clip(min=0)
+    # bbox = denormalize_bbox(bbox,image_size[0],image_size[1])
+    # bbox = np.round(bbox).astype(int)
     annotation["bbox"] = np.minimum(bbox, list(image_size + image_size)[::-1])
     annotation["bbox_mode"] = BoxMode.XYXY_ABS
 

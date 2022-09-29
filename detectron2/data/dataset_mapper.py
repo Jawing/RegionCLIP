@@ -10,9 +10,13 @@ from detectron2.config import configurable
 from . import detection_utils as utils
 from . import transforms as T
 
+from detectron2.data.transforms import CocoDetectionCP
+from detectron2.data.transforms import display_instances
+from detectron2.data.transforms import CopyPaste
+
 import albumentations as A
 from detectron2.data.transforms import AlbumentationsWrapper
-from detectron2.data.transforms import CopyPaste
+from PIL import Image
 
 """
 This file contains the default mapping that's applied to "dataset dicts".
@@ -102,10 +106,50 @@ class DatasetMapper:
             recompute_boxes = False
         #add augmentations (add copy past and albumentations transformations)
         if cfg.INPUT.ROT.ENABLED and is_train:
-            augs.append(T.RandomRotation(cfg.INPUT.ROT.RANGE, expand=True, center=None, sample_style=cfg.INPUT.ROT.TYPE, interp=None))
+            pass
+            #augs.append(T.RandomRotation(cfg.INPUT.ROT.RANGE, expand=True, center=None, sample_style=cfg.INPUT.ROT.TYPE, interp=None))
         
+        #TODO note if only use Albumentation format then bbox only in Albumentation style
+        #LargeScaleJitter from scale of 0.1 to 2
+        if cfg.INPUT.LSJ.ENABLED and is_train:
+            # A.LongestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1))
+            # A.SmallestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1)
+            # augs.insert(0,(AlbumentationsWrapper(A.HorizontalFlip(p=0.5))))
+            augs.insert(0,(AlbumentationsWrapper(A.RandomCrop(800, 800))))
+            augs.insert(0,(AlbumentationsWrapper(A.PadIfNeeded(800, 800, border_mode=0, position= "top_left"))))
+            augs.insert(0,(AlbumentationsWrapper(A.RandomScale(scale_limit=(-0.9, 1), p=1.0))))
+            
+            # augs.insert(0,T.ResizeScale(0.1,2.0))
+
+                
         #add additional Albumentation Augmentations
-        #augs.append(AlbumentationsWrapper(A.RandomBrightnessContrast(p=1)))
+        # augs.insert(0,(AlbumentationsWrapper(A.RandomBrightnessContrast(p=1.0))))
+        #A.PadIfNeeded(cfg.INPUT.MIN_SIZE_TRAIN, cfg.INPUT.MIN_SIZE_TRAIN, border_mode=0), #constant 0 border
+        
+        # #copy paste augmentation
+        # augs.append(AlbumentationsWrapper(A.Compose([
+        #       A.RandomScale(scale_limit=(-0.9, 1), p=1), #LargeScaleJitter from scale of 0.1 to 2
+        #       A.PadIfNeeded(256, 256, border_mode=0), #constant 0 border
+        #       A.RandomCrop(256, 256),
+        #       A.HorizontalFlip(p=0.5),
+        #       CopyPaste(blend=True, sigma=1, pct_objects_paste=0.5, p=1.0)
+        #     ], bbox_params=A.BboxParams(format="coco")
+        # )))
+        
+
+        # aug_list = [A.Resize(800,800),#resize all images to fixed shape
+        #     CopyPaste(blend=True, sigma=1, pct_objects_paste=0.9, p=1.0) #pct_objects_paste is a guess
+        # ]
+        # transform = A.Compose(
+        #     aug_list, bbox_params=A.BboxParams(format="coco")
+        # )
+        # data = CocoDetectionCP(
+        #     '/data/Object_detection/data/Indoor_objectDetection/Awakening_Basic/train', 
+        #     '/data/Object_detection/data/Indoor_objectDetection/Awakening_Basic/train/Annotations_5class_c.json', 
+        #     transform
+        # )
+        # print(data[0])
+        
 
         ret = {
             "is_train": is_train,
@@ -149,11 +193,21 @@ class DatasetMapper:
             sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name"), "L").squeeze(2)
         else:
             sem_seg_gt = None
+        #### COPY_PASTE AUGMENTATION ####
 
+
+        #################################
+        # bboxes = []
+        # for anno in dataset_dict["annotations"]:
+        #     bboxes.append(BoxMode.convert(anno["bbox"], anno["bbox_mode"], BoxMode.XYXY_ABS))
+        # aug_input = T.AugInput(image, sem_seg=sem_seg_gt, boxes=bboxes)
+
+        # Image.fromarray(image).save("./pre_aug.jpg")
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
         transforms = self.augmentations(aug_input)
 
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
+        # Image.fromarray(image).save("./after_aug.jpg")
 
         image_shape = image.shape[:2]  # h, w
         # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,

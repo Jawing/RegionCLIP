@@ -20,6 +20,7 @@ pip install opencv-python timm diffdist h5py sklearn ftfy
 pip install git+https://github.com/lvis-dataset/lvis-api.git
 pip install git+https://github.com/Jawing/object_detection_metrics.git
 pip install shapely==1.8.2
+pip install bbox-visualizer
 #python3 -m pip install -r ./RegionCLIP/requirements.txt
 
 pip install albumentations==1.2.1

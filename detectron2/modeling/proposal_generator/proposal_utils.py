@@ -72,14 +72,19 @@ def find_top_rpn_proposals(
         else:
             num_proposals_i = min(Hi_Wi_A, pre_nms_topk)
 
+        print("pre offline_filter size:",logits_i.size(1))
         # sort is faster than topk: https://github.com/pytorch/pytorch/issues/22812
         # topk_scores_i, topk_idx = logits_i.topk(num_proposals_i, dim=1)
         logits_i, idx = logits_i.sort(descending=True, dim=1)
+        #logits_i = torch.nn.functional.softmax(logits_i, dim=1)
         topk_scores_i = logits_i.narrow(1, 0, num_proposals_i)
         topk_idx = idx.narrow(1, 0, num_proposals_i)
-
+        print("post offline_filter size:",topk_scores_i.size(1))
+        #print(batch_idx[:, None])
+        #print(torch.arange(proposals_i.size(0)))
         # each is N x topk
         topk_proposals_i = proposals_i[batch_idx[:, None], topk_idx]  # N x topk x 4
+        #topk_proposals_i_Test = proposals_i[torch.arange(proposals_i.size(0)), topk_idx]  # N x topk x 4
 
         topk_proposals.append(topk_proposals_i)
         topk_scores.append(topk_scores_i)
@@ -121,6 +126,9 @@ def find_top_rpn_proposals(
         # As a result, the training behavior becomes batch-dependent,
         # and the configuration "POST_NMS_TOPK_TRAIN" end up relying on the batch size.
         # This bug is addressed in Detectron2 to make the behavior independent of batch size.
+        
+        #print(set(lvl.tolist())) #prints 0
+        print("post offline_nms size: ", len(keep))
         keep = keep[:post_nms_topk]  # keep is already sorted
 
         res = Instances(image_size)

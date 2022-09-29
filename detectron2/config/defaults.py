@@ -69,6 +69,7 @@ _C.INPUT.CROP.TYPE = "relative_range"
 # pixels if CROP.TYPE is "absolute"
 _C.INPUT.CROP.SIZE = [0.9, 0.9]
 
+_C.INPUT.LSJ = CN({"ENABLED": False})
 # `True` if rotations are used for data augmentation during training
 _C.INPUT.ROT = CN({"ENABLED": False})
 _C.INPUT.ROT.TYPE = "choice"
@@ -217,10 +218,12 @@ _C.MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH = None # if not None, enables the opens
 _C.MODEL.CLIP.CLSS_TEMP = 0.01 # normalization + dot product + temperature
 _C.MODEL.CLIP.RUN_CVPR_OVR = False # if True, train CVPR OVR model with their text embeddings
 _C.MODEL.CLIP.FOCAL_SCALED_LOSS = None # if not None (float value for gamma), apply focal loss scaling idea to standard cross-entropy loss
-_C.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA = None
-
+_C.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA = -1
+_C.MODEL.CLIP.BG_CLS_SCORE = False #include Background classification score for inference
+_C.MODEL.CLIP.CLS_ID_NMS = False #class independent nms for inference head (used with Box_delta)
 _C.MODEL.CLIP.OFFLINE_RPN_NMS_THRESH = None # the threshold of NMS in offline RPN
 _C.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TEST = None # the number of region proposals from offline RPN
+_C.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST = None # the number of region proposals from offline RPN before nms
 _C.MODEL.CLIP.PRETRAIN_IMG_TXT_LEVEL = True # if True, pretrain model using image-text level matching
 _C.MODEL.CLIP.PRETRAIN_ONLY_EOT = False # if True, use end-of-token emb to match region features, in image-text level matching
 _C.MODEL.CLIP.PRETRAIN_RPN_REGIONS = None # if not None, the number of RPN regions per image during pretraining
