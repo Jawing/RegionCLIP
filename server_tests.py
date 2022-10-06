@@ -29,7 +29,7 @@ img = cv2.imread(inference_img,cv2.IMREAD_COLOR)
 print(type(img))
 #get classes
 classes = []
-cls_file = './classes.txt'
+cls_file = './labels_5class.txt'
 with open(cls_file, 'r') as f:
     for line in f:
         classes.append(line.strip())

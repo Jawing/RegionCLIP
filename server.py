@@ -19,7 +19,7 @@ app = Flask(__name__)
 config_script = './config_init.sh'
 config_dir = './server_config.pkl'
 classes = []
-cat_file = './classes.txt'
+cat_file = './labels_5class.txt'
 with open(cat_file, 'r') as f:
     for line in f:
         classes.append(line.strip())
