@@ -17,7 +17,7 @@ python ./tools/visualize_json_results_rpn.py \
 --input ./output/inference/lvis_instances_results.json \
 --input-gt ./datasets/humanware/annotations/instances_test_custom.json \
 --output ./output/custom_rpn \
---dataset humanware_val_custom_img \
+--dataset humanware_test_custom_img \
 --conf-threshold 0 \
 --show-unique-boxes \
 --max-boxes 10000 \

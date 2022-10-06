@@ -266,7 +266,7 @@ class CLIPFastRCNN(nn.Module):
             Otherwise, a list[Instances] containing raw network outputs.
         """
         assert not self.training
-        print(batched_inputs[0]["file_name"])
+        # print(batched_inputs[0]["file_name"])
         # localization branch: offline modules to get the region proposals
         if self.clip_crop_region_type == "GT":  # from ground-truth
             proposals = []
