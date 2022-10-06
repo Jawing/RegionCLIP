@@ -5,6 +5,9 @@
 
 # uncomment/comment to select between model before running server.py
 
+# for extra label classes, make sure to add/remove them from './labels_5class_c.txt' 
+# with correct text embedding order before running server
+
 # #RN50 model trained on new basicAI keychain labels
 # python3 ./tools/config_init.py \
 # --eval-only  \
