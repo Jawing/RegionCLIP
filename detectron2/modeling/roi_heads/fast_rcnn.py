@@ -165,17 +165,26 @@ def fast_rcnn_inference_single_image(
 
     #return unfiltered sorted scores with background class
 
+    original_scores = scores.detach().clone()
+    #exclude background classes
+    scores = scores[:, :-1]
+    scores_bf_multiply = scores_bf_multiply[:, :-1]
+
     #return all scores from RPN if get bg_cls_boxes
     if bg_cls_scores:
-        original_scores = scores.detach().clone()
-        #exclude background classes
-        scores = scores[:, :-1]
-        scores_bf_multiply = scores_bf_multiply[:, :-1]
 
         result = Instances(image_shape)
-        result.pred_boxes = Boxes(boxes)
         scores_max, idx_max = scores.max(dim=1)
+
+        # #TODO test sort by scores
+        # scores_max, idx = scores_max.sort(descending=True)
+        # boxes = boxes[idx]  # topk x 1 x 4
+        # idx_max = idx_max[idx]
+        # original_scores= original_scores[idx]
+        # scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx]
+        
         scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx_max]
+        result.pred_boxes = Boxes(boxes)
         result.scores = scores_max
         if vis: # visualization: convert to the original scores before multiplying RPN scores
             result.scores = scores_bf_multiply         
@@ -183,12 +192,8 @@ def fast_rcnn_inference_single_image(
         result.all_scores = original_scores
         return result, torch.arange(len(scores))
 
-    original_scores = scores.detach().clone()
-    #comment out to get nms including background class
-    scores = scores[:, :-1]
-    scores_bf_multiply = scores_bf_multiply[:, :-1]
 
-    print("before adding dup: ",scores.size(0))
+    # print("before adding dup: ",scores.size(0))
     num_bbox_reg_classes = boxes.shape[1] // 4
     # Convert to Boxes to use the `clip` function ...
     boxes = Boxes(boxes.reshape(-1, 4))
@@ -215,7 +220,7 @@ def fast_rcnn_inference_single_image(
     scores_bf_multiply= scores_bf_multiply[idx]
     original_scores= original_scores[idx]
     filter_inds=filter_inds[idx]
-    print("after score filter with dups: ",len(scores))
+    # print("after score filter with dups: ",len(scores))
 
 
     #remove list of duplicates index (overlapping boxes only keep the top scoring class)
@@ -233,7 +238,7 @@ def fast_rcnn_inference_single_image(
     original_scores = original_scores[mask]    
     #they must equal
     assert len(filter_inds[:, 0]) == len(set(inds_temp))
-    print("after dup removal: ",len(scores))
+    # print("after dup removal: ",len(scores))
 
 
     # 2. Apply NMS for each class independently.
@@ -266,7 +271,7 @@ def fast_rcnn_inference_single_image(
     boxes, scores, filter_inds = boxes[keep], scores[keep], filter_inds[keep]
     scores_bf_multiply = scores_bf_multiply[keep]
     original_scores = original_scores[keep]
-    print("after nms: ",len(scores))
+    # print("after nms: ",len(scores))
 
     result = Instances(image_shape)
     result.pred_boxes = Boxes(boxes)
@@ -275,7 +280,7 @@ def fast_rcnn_inference_single_image(
         result.scores = scores_bf_multiply         
     result.pred_classes = filter_inds[:, 1]
     #check if all filtered bboxes are unique (should give error most likely with batchednms)
-    print("unique boxes: ", len(set(filter_inds[:, 0].tolist())))
+    # print("unique boxes: ", len(set(filter_inds[:, 0].tolist())))
     assert len(filter_inds[:, 0]) == len(set(filter_inds[:, 0].tolist()))
     
     result.all_scores = original_scores

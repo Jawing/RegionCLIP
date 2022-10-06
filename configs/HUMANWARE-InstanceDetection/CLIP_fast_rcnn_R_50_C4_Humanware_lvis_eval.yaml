@@ -2,12 +2,26 @@ _BASE_: "./CLIP_fast_rcnn_R_50_C4.yaml"
 MODEL:
   MASK_ON: False
   ROI_HEADS:
-    NUM_CLASSES: 6
-  # uncomment below for zeroshot inference
-  #   NMS_THRESH_TEST: 0.5
+    NUM_CLASSES: 5
+    NMS_THRESH_TEST: 0.2 #Defaults to 0.5
+    SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
   # CLIP:
-  #   NO_BOX_DELTA: True
-  #   OFFLINE_RPN_NMS_THRESH: 0.9
+  #   # NO_BOX_DELTA: False #set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
+  #   # OFFLINE_RPN_NMS_THRESH: 0.7 #default 0.7
+  #   BG_CLS_SCORE: False #include background bboxes and scores
+  #   OFFLINE_RPN_PRE_NMS_TOPK_TEST: 6000 #default 6000
+  #   OFFLINE_RPN_POST_NMS_TOPK_TEST: 1000 #default 1000
+  #   CLS_ID_NMS: False #default False
 DATASETS:
-  TRAIN: ("humanware_train",)
-  TEST: ("humanware_test_cleaned",)
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_test_custom",)
+#  TEST: ("humanware_test_basic",)
+#  TEST: ("humanware_test_collected",)
+#  TEST: ("humanware_test_full",)
+#  TEST: ("humanware_test_awake",)
+# INPUT:
+#   MIN_SIZE_TEST: 800
+#   MAX_SIZE_TEST: 1333
+TEST:
+  #lvis allows up to 300 detections per image
+  DETECTIONS_PER_IMAGE: 300 #default 100, set equal POST_NMS_TOPK_TEST to detect all from RPN

@@ -1,8 +1,7 @@
-_BASE_: "./CLIP_fast_rcnn_R_50_C4.yaml"
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
-  MASK_ON: False
   ROI_HEADS:
-    NUM_CLASSES: 5
+    NUM_CLASSES: 7
     NMS_THRESH_TEST: 0.2 #Defaults to 0.5
     SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
   CLIP:
@@ -14,9 +13,19 @@ MODEL:
   #   OFFLINE_RPN_POST_NMS_TOPK_TEST: 1000 #default 1000
   #   CLS_ID_NMS: False #default False
 DATASETS:
-  TRAIN: ("lvis_v1_train_custom_img",) #not needed for --eval-only
-  TEST: ("lvis_v1_val_custom_img",)  #custom images
-  # TRAIN: ("humanware_train_custom_img",) #TODO custom images only works with lvis settings? need lvis model?
-  # TEST: ("humanware_val_custom_img",)
+  # generates lvis_instances_results.json
+  TRAIN: ("humanware_train_full_c",)
+  # TEST: ("humanware_test_basic_c",)
+  # TEST: ("humanware_test_collected_c",)
+  # TEST: ("humanware_test_full_c",)
+  # TEST: ("humanware_test_awake_c",)
+
+  # generate coco_instances_results.json
+  # TRAIN: ("lvis_v1_train_custom_img",) #not needed for --eval-only
+  # TEST: ("lvis_v1_val_custom_img",)  #custom images
+  
+# INPUT:
+#   MIN_SIZE_TEST: 800
+#   MAX_SIZE_TEST: 1333
 # TEST:
 #   DETECTIONS_PER_IMAGE: 100 #set equal POST_NMS_TOPK_TEST to detect all from RPN

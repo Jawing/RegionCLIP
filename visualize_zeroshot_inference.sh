@@ -1,56 +1,56 @@
 # visualize zero-shot inference results on custom images
 ########################################################
 
-# Humanware RegionCLIP (RN50) COCO RPN ONLY
+# Humanware RegionCLIP (RN50) COCO
 python3 ./tools/train_net.py \
 --eval-only \
 --num-gpus 1 \
---config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_coco.yaml \
+--config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_coco_zsinf.yaml \
 MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
-MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50.pth \
+MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
 
 # visualize the prediction json file
 python ./tools/visualize_json_results.py \
 --input ./output/inference/lvis_instances_results.json \
---output ./output/custom_zs_iid_coco \
+--output ./output/custom_zsinf_coco_s \
 --dataset humanware_val_custom_img \
 --conf-threshold 0.7 \
 --show-unique-boxes \
 --max-boxes 50 \
 --small-region-px 210\
 
-# Humanware RegionCLIP (RN50) LVIS RPN ONLY
-python3 ./tools/train_net.py \
---eval-only \
---num-gpus 1 \
---config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_lvis.yaml \
-MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
-MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_P_RN50.pth \
-MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
-MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_lvis_866.pth \
-
-
-# visualize the prediction json file
-python ./tools/visualize_json_results.py \
---input ./output/inference/lvis_instances_results.json \
---output ./output/custom_zs_iid_lvis \
---dataset humanware_val_custom_img \
---conf-threshold 0.7 \
---show-unique-boxes \
---max-boxes 50 \
---small-region-px 210\
-
-########################################################
-
-# Humanware RegionCLIP (RN50x4)
+# # Humanware RegionCLIP (RN50) LVIS
 # python3 ./tools/train_net.py \
 # --eval-only \
 # --num-gpus 1 \
-# --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img.yaml \
+# --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_lvis_zsinf.yaml \
+# MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50.pth \
+# MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5.pth \
+# MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
+# MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_lvis_866.pth \
+
+
+# # visualize the prediction json file
+# python ./tools/visualize_json_results.py \
+# --input ./output/inference/lvis_instances_results.json \
+# --output ./output/custom_zsinf_lvis_s \
+# --dataset humanware_val_custom_img \
+# --conf-threshold 0.7 \
+# --show-unique-boxes \
+# --max-boxes 50 \
+# --small-region-px 210\
+
+########################################################
+
+# Humanware RegionCLIP (RN50x4) LVIS
+# python3 ./tools/train_net.py \
+# --eval-only \
+# --num-gpus 1 \
+# --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_custom_img_lvis_zsinf.yaml \
 # MODEL.WEIGHTS ./pretrained_ckpt/regionclip/regionclip_pretrained-cc_rn50x4.pth \
-# MODEL.CLIP.TEXT_EMB_PATH ./pretrained_ckpt/concept_emb/Humanware_indoor6_J_RN50x4.pth \
+# MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50x4_nn5.pth \
 # MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/LVISv1-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 # MODEL.CLIP.TEXT_EMB_DIM 640 \
 # MODEL.RESNETS.DEPTH 200 \
@@ -61,7 +61,7 @@ python ./tools/visualize_json_results.py \
 # visualize the prediction json file
 # python ./tools/visualize_json_results.py \
 # --input ./output/inference/lvis_instances_results.json \
-# --output ./output/custom_zs \
+# --output ./output/custom_zsinf_lvis_l \
 # --dataset humanware_val_custom_img \
 # --conf-threshold 0.90 \
 # --show-unique-boxes \
@@ -70,7 +70,9 @@ python ./tools/visualize_json_results.py \
 # min detected box area 211
 # TODO: assume max boxes are already sorted by score in lvis_instances_results.json but not TRUE
 
+
 ########################################################
+#zeroshot pretrained settings with lvis 1203 categories
 
 # RegionCLIP (RN50x4)
 # python3 ./tools/train_net.py \
@@ -115,8 +117,5 @@ python ./tools/visualize_json_results.py \
 # --show-unique-boxes \
 # --max-boxes 25 \
 # --small-region-px 8100\
-
-
-
 
 

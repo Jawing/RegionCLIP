@@ -12,7 +12,8 @@ gt_basicVal_json = './datasets/humanware/annotations/instances_val_basic.json'
 #result_lvis_json = './output/inference/lvis_instances_results.json'
 
 #define output coco json and ground true below
-Large = True
+custom = False
+large = True
 basic = False
 val = False
 cf_percents = [0.99,0.98,0.97,0.96,0.95,0.94,0.93,0.92,0.91,0.9,0.85,0.8,0.75,0.7,0.5,0.25]
@@ -22,17 +23,20 @@ if basic:
         save_fig_loc = './output/inference/basicVal_pr50'
     else:
         save_fig_loc = './output/inference/basic_pr50'
-    if Large:
+    if large:
         result_coco_json = './output/inference/coco_instances_results_full_large_basic.json'
     else:
         result_coco_json = './output/inference/coco_instances_results_full_small_basic.json'
 else:
     save_fig_loc = './output/inference/hw_pr50'
-    if Large:
+    if large:
         result_coco_json = './output/inference/coco_instances_results_full_large_hw.json'
     else:
         result_coco_json = './output/inference/coco_instances_results_full_small_hw.json'
 
+#use custom generated results from test_transfer_learning scripts
+if custom:
+    result_coco_json = './output/inference/coco_instances_results.json'
 classes = []
 
 #load datasets

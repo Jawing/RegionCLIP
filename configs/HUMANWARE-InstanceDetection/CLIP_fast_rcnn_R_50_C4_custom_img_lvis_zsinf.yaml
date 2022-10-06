@@ -3,11 +3,11 @@ MODEL:
   MASK_ON: False
   ROI_HEADS:
     NUM_CLASSES: 5
-    NMS_THRESH_TEST: 0.2 #Defaults to 0.5
-    SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
+    NMS_THRESH_TEST: 0.5 #Defaults to 0.5
+    # SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
   CLIP:
-    NO_BOX_DELTA: False #set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
-    OFFLINE_RPN_NMS_THRESH: 0.7 #default 0.9 for custom or zsinf
+    NO_BOX_DELTA: True #set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
+    OFFLINE_RPN_NMS_THRESH: 0.9 #default 0.9 for custom or zsinf
     VIS: True # Note: visualize the scores before multiplying RPN scores, if any
     # BG_CLS_SCORE: False #generate all rpn bbox and scores include background bboxes and scores
   #   OFFLINE_RPN_PRE_NMS_TOPK_TEST: 6000 #default 6000
@@ -18,5 +18,6 @@ DATASETS:
   TEST: ("lvis_v1_val_custom_img",)  #custom images
   # TRAIN: ("humanware_train_custom_img",) #TODO custom images only works with lvis settings? need lvis model?
   # TEST: ("humanware_val_custom_img",)
-# TEST:
-#   DETECTIONS_PER_IMAGE: 100 #set equal POST_NMS_TOPK_TEST to detect all from RPN
+TEST:
+  #lvis allows up to 300 detections per image
+  DETECTIONS_PER_IMAGE: 300 #default 100, set equal POST_NMS_TOPK_TEST to detect all from RPN

@@ -1,7 +1,7 @@
 _BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
   ROI_HEADS:
-    NUM_CLASSES: 7
+    NUM_CLASSES: 5
   #   NMS_THRESH_TEST: 0.5
   # CLIP:
   # #   NO_BOX_DELTA: False
@@ -13,11 +13,11 @@ TEST:
   # DETECTIONS_PER_IMAGE: 1000 #default 100 set equal POST_NMS_TOPK_TEST to detect all from RPN
   EVAL_PERIOD: 2500
 SOLVER:
-  IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
-  BASE_LR: 0.002 #was 0.002
+  IMS_PER_BATCH: 2 #was 8 for gpu memory, 2 for RN50x4
+  BASE_LR: 0.001 #was 0.002
   #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
-  STEPS: (10000, 70000) #decrease lr by factor of 10
-  MAX_ITER: 120000
+  STEPS: (18000, 60000) #decrease lr by factor of 10
+  MAX_ITER: 90000
   WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
   CHECKPOINT_PERIOD: 2500
 INPUT:
@@ -32,5 +32,5 @@ INPUT:
   LSJ:
     ENABLED: false
 DATASETS:
-  TRAIN: ("humanware_train_full_c",)
-  TEST: ("humanware_val_full_c",)
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_val_full",)

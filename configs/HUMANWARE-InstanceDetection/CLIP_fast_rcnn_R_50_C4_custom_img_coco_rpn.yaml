@@ -1,0 +1,32 @@
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
+MODEL:
+  MASK_ON: False
+  ROI_HEADS:
+    NUM_CLASSES: 5
+    NMS_THRESH_TEST: 0.2 #Defaults to 0.5
+    # SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
+  CLIP:
+    #TODO when NO_BOX_DELTA: True NMS_THRESH_TEST = OFFLINE_RPN_NMS should not change bbox number output
+    # NO_BOX_DELTA: True #set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
+    OFFLINE_RPN_NMS_THRESH: 0.9 #default 0.9 for custom or zsinf
+    # MULTIPLY_RPN_SCORE: True #uncomment for >100% scores with objectiveness logits
+    VIS: True # Note: visualize the scores before multiplying RPN scores, if any
+    BG_CLS_SCORE: True #generate all rpn bbox and scores include background bboxes and scores
+    OFFLINE_RPN_PRE_NMS_TOPK_TEST: 6000 #default 6000
+    OFFLINE_RPN_POST_NMS_TOPK_TEST: 1000 #default 1000
+    CLS_ID_NMS: True #default False
+  # doesn't register use above
+  # RPN:
+  #   NMS_THRESH: 0.7
+  #   PRE_NMS_TOPK_TEST: 12000 #default 6000
+  #   POST_NMS_TOPK_TEST: 2000 #default 1000
+DATASETS:
+  TRAIN: ("lvis_v1_train_custom_img",) #not needed for --eval-only
+  TEST: ("lvis_v1_val_custom_img",)  #custom images
+  # TRAIN: ("humanware_train",) #custom images result stored in lvis_instances_results.json
+  # TEST: ("humanware_test",)
+  # Below doesn't refer to custom image folder but to set folder
+  # TRAIN: ("humanware_train_custom_img",) #custom images only works with lvis settings? need lvis model?
+  # TEST: ("humanware_val_custom_img",)
+TEST:
+  DETECTIONS_PER_IMAGE: 1000 #set equal POST_NMS_TOPK_TEST to detect all from RPN

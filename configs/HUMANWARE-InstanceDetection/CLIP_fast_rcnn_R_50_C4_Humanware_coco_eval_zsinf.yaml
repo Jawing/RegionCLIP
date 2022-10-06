@@ -1,0 +1,24 @@
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
+MODEL:
+  ROI_HEADS:
+    NUM_CLASSES: 5 #same number as MODEL.CLIP.TEXT_EMB_PATH relative to TEST set
+    NMS_THRESH_TEST: 0.5
+  CLIP:
+    NO_BOX_DELTA: True #set to true for zero-shot inference
+    OFFLINE_RPN_NMS_THRESH: 0.9 #default 0.9 for custom or zsinf
+    # BG_CLS_SCORE: False #include background bboxes and scores
+    # OFFLINE_RPN_PRE_NMS_TOPK_TEST: 6000 #default 6000
+    # OFFLINE_RPN_POST_NMS_TOPK_TEST: 1000 #default 1000
+    # CLS_ID_NMS: False #default False
+DATASETS:
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_test_custom",)
+#  TEST: ("humanware_test_basic",)
+#  TEST: ("humanware_test_collected",)
+#  TEST: ("humanware_test_full",)
+#  TEST: ("humanware_test_awake",)
+# INPUT:
+#   MIN_SIZE_TEST: 800
+#   MAX_SIZE_TEST: 1333
+TEST:
+  DETECTIONS_PER_IMAGE: 1000 #set equal POST_NMS_TOPK_TEST to detect all from RPN
