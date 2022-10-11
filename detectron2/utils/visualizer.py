@@ -223,8 +223,41 @@ class _PanopticPrediction:
             if mask.sum() > 0:
                 yield mask, sinfo
 
+def _create_text_labels_rpn(classes, scores, class_names, top_dict,best_dict, stats, all_scores=None, is_crowd=None):
+    """
+    Args:
+        classes (list[int] or None):
+        scores (list[float] or None):
+        class_names (list[str] or None):
+        is_crowd (list[bool] or None):
 
-def _create_text_labels(classes, scores, class_names, is_crowd=None):
+    Returns:
+        list[str] or None
+    """
+    labels = [None for _ in range(len(classes))]
+    #add ground truth labels
+    if classes is not None and len(stats['pt_overlap']) > 0:
+        labels[:len(stats['pt_overlap'])] = ["{} Overlap:{} \nGT Overlap:{}".format(class_names[i], s,gt) for i,s,gt in zip(classes[:len(stats['pt_overlap'])],stats['pt_overlap'],stats['pt_top_gt'])]
+    #optional add top/best class and score labels    
+    if len(best_dict['best_classes']) > 0 or len(top_dict['top_classes']) > 0:
+        #print best class score
+        for i,u,s,idx,gt in zip(best_dict['best_classes'],best_dict['best_iou'],best_dict['best_scores'],best_dict['best_idx'],best_dict['best_gt_scores']):
+            labels[idx] = "Best Score:{} {:.1f}% \nIoU:{:.1f}% GT:{:.1f}%".format(class_names[i],s*100,  u * 100, gt * 100)
+        #print top class score
+        for i,u,s,idx,gt,eq in zip(top_dict['top_classes'],top_dict['top_iou'],top_dict['top_scores'],top_dict['top_idx'],top_dict['top_gt_scores'],top_dict['top_best_eq']):
+            if eq:
+                labels[idx] = "Top/Best IoU:{:.1f}% \n{} Score:{:.1f}% GT:{:.1f}%".format(u*100, class_names[i], s * 100, gt * 100)
+            else:
+                labels[idx] = "Top IoU:{:.1f}% \n{} Score:{:.1f}% GT:{:.1f}%".format(u*100, class_names[i], s * 100, gt * 100)
+        # # #print all class score
+        # for i,u,idx in zip(top_dict['top_all_scores'],top_dict['top_iou'],top_dict['top_idx']):
+        #     labels[idx] = "iou:{:.1f}% ".format(u*100) + ' '.join('{} {:.3f}%'.format(class_names[n],k) for n, k in enumerate(i[:-1]))
+            #print(f"{idx},{labels[idx]}")
+    if labels is not None and is_crowd is not None:
+        labels = [l + ("|crowd" if crowd else "") for l, crowd in zip(labels, is_crowd)]
+    return labels
+
+def _create_text_labels(classes, scores, class_names, all_scores=None,  is_crowd=None):
     """
     Args:
         classes (list[int] or None):
@@ -249,6 +282,65 @@ def _create_text_labels(classes, scores, class_names, is_crowd=None):
     if labels is not None and is_crowd is not None:
         labels = [l + ("|crowd" if crowd else "") for l, crowd in zip(labels, is_crowd)]
     return labels
+
+def apply(item, fun):
+    if isinstance(item, list):
+        return [apply(x, fun) for x in item]
+    else:
+        return fun(item)
+
+
+def _create_text_labels_prob(classes, scores, class_names, all_scores=None,  is_crowd=None):
+    """
+    Args:
+        classes (list[int] or None):
+        scores (list[float] or None):
+        class_names (list[str] or None):
+        is_crowd (list[bool] or None):
+
+    Returns:
+        list[str] or None
+    """
+    all_scores_sort = -np.sort(-all_scores,1)
+    all_classes =  np.argsort(-all_scores,1)
+    all_classes_idx = all_classes
+    labels = None
+    if classes is not None:
+        if class_names is not None and len(class_names) > 0:
+            labels = [class_names[i] for i in classes]
+            #apply(all_classes, lambda x:class_names[x])
+            
+            #labels_all = [j[i] for i in   j for j in all_classes.tolist()]
+            labels_all=[]
+            for j in all_classes.tolist():
+                line=[]
+                for i in j:
+                    line.append(class_names[i])
+                labels_all.append(line)
+
+
+        else:
+            labels = [str(i) for i in classes]
+    if scores is not None:
+        if labels is None:
+            labels = ["{:.0f}%".format(s * 100) for s in scores]
+        else:
+            labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
+            #labels_all = []
+            all_labels=[]
+            for label_line, s_line in zip(labels_all, all_scores_sort):
+                labels_each=""
+                for i, (l, s) in enumerate(zip(label_line, s_line)):
+                    if i >1:
+                        break
+                    labels_each+=" {} {:.0f}%".format(l, s * 100)
+                    
+                all_labels.append(labels_each)
+
+
+    if labels is not None and is_crowd is not None:
+        labels = [l + ("|crowd" if crowd else "") for l, crowd in zip(labels, is_crowd)]
+    return labels, all_labels
 
 
 class VisImage:
@@ -370,6 +462,58 @@ class Visualizer:
         )
         self._instance_mode = instance_mode
 
+    def draw_instance_predictions_prob(self, predictions):
+        """
+        Draw instance-level prediction results on an image.
+
+        Args:
+            predictions (Instances): the output of an instance detection/segmentation
+                model. Following fields will be used to draw:
+                "pred_boxes", "pred_classes", "scores", "pred_masks" (or "pred_masks_rle").
+
+        Returns:
+            output (VisImage): image object with visualizations.
+        """
+        boxes = predictions.pred_boxes if predictions.has("pred_boxes") else None
+        scores = predictions.scores if predictions.has("scores") else None
+        all_scores = predictions.all_scores
+        classes = predictions.pred_classes.tolist() if predictions.has("pred_classes") else None
+        labels, all_labels = _create_text_labels_prob(classes, scores, self.metadata.get("thing_classes", None), all_scores)
+        keypoints = predictions.pred_keypoints if predictions.has("pred_keypoints") else None
+
+        if predictions.has("pred_masks"):
+            masks = np.asarray(predictions.pred_masks)
+            masks = [GenericMask(x, self.output.height, self.output.width) for x in masks]
+        else:
+            masks = None
+
+        if self._instance_mode == ColorMode.SEGMENTATION and self.metadata.get("thing_colors"):
+            colors = [
+                self._jitter([x / 255 for x in self.metadata.thing_colors[c]]) for c in classes
+            ]
+            alpha = 0.8
+        else:
+            colors = None
+            alpha = 0.5
+
+        if self._instance_mode == ColorMode.IMAGE_BW:
+            self.output.img = self._create_grayscale_image(
+                (predictions.pred_masks.any(dim=0) > 0).numpy()
+                if predictions.has("pred_masks")
+                else None
+            )
+            alpha = 0.3
+
+        self.overlay_instances(
+            masks=masks,
+            boxes=boxes,
+            labels=all_labels,
+            keypoints=keypoints,
+            assigned_colors=colors,
+            alpha=alpha,
+        )
+        return self.output
+
     def draw_instance_predictions(self, predictions):
         """
         Draw instance-level prediction results on an image.
@@ -421,9 +565,9 @@ class Visualizer:
         )
         return self.output
 
-    def draw_instance_predictions_rpn(self, predictions, colors=None,inc_label=True,box_length=None):
+    def draw_instance_predictions_rpn(self, predictions, gt_dict, top_dict, best_dict,stats, colors=None,inc_label=True,box_length=None,alpha=None):
         """
-        Draw instance-level prediction results on an image.
+        Draw instance-level prediction results on an image with stats, RPN.
 
         Args:
             predictions (Instances): the output of an instance detection/segmentation
@@ -436,8 +580,15 @@ class Visualizer:
         boxes = predictions.pred_boxes if predictions.has("pred_boxes") else None
         scores = predictions.scores if predictions.has("scores") else None
         classes = predictions.pred_classes.tolist() if predictions.has("pred_classes") else None
+        best_dict
+        #concat ground truth boxes
+        boxes = Boxes(torch.cat((gt_dict['gt_boxes'].tensor,boxes.tensor), dim=0))
+        scores = np.append(gt_dict['gt_scores'],scores)
+        classes = np.append(gt_dict['gt_classes'],classes).tolist()
+        gt_length = len(gt_dict['gt_classes'])
+
         if inc_label:
-            labels = _create_text_labels(classes, scores, self.metadata.get("thing_classes", None))
+            labels = _create_text_labels_rpn(classes, scores, self.metadata.get("thing_classes", None),top_dict,best_dict, stats)
         else:
             labels = None
         keypoints = predictions.pred_keypoints if predictions.has("pred_keypoints") else None
@@ -455,7 +606,7 @@ class Visualizer:
             alpha = 0.8
         else:
             colors = colors
-            alpha = 0.5
+            alpha = alpha
 
         if self._instance_mode == ColorMode.IMAGE_BW:
             self.output.img = self._create_grayscale_image(
@@ -473,6 +624,8 @@ class Visualizer:
             assigned_colors=colors,
             alpha=alpha,
             box_length=box_length,
+            gt_length=gt_length,
+            top_idx = top_dict['top_idx']
         )
         return self.output
 
@@ -800,6 +953,8 @@ class Visualizer:
         assigned_colors=None,
         alpha=0.5,
         box_length=None,
+        gt_length=None,
+        top_idx=None
     ):
         """
         Args:
@@ -855,6 +1010,8 @@ class Visualizer:
             assigned_colors = [np.array(assigned_colors[0]) for _ in range(num_instances)]
         if box_length is None:
             box_length = [1.0 for _ in range(num_instances)]
+        if alpha is None:
+            alpha = [0.5 for _ in range(num_instances)]
         if num_instances == 0:
             return self.output
         if boxes is not None and boxes.shape[1] == 5:
@@ -869,6 +1026,24 @@ class Visualizer:
         elif masks is not None:
             areas = np.asarray([x.area() for x in masks])
 
+        #extract ground truth boxes so they are drawn first
+        if gt_length:
+            gt_boxes = boxes[:gt_length]
+            boxes = boxes[gt_length:]
+            gt_labels = labels[:gt_length]
+            labels = labels[gt_length:]
+            if masks is not None:
+                gt_masks = masks[:gt_length]
+                masks = masks[gt_length:]
+            gt_assigned_colors = assigned_colors[:gt_length]
+            assigned_colors = assigned_colors[gt_length:]
+            if keypoints is not None:
+                gt_keypoints =  keypoints[:gt_length]
+                keypoints = keypoints[gt_length:]
+            gt_box_length = box_length[:gt_length]
+            box_length = box_length[gt_length:]
+            gt_areas = areas[:gt_length]
+            areas = areas[gt_length:]
         if areas is not None:
             sorted_idxs = np.argsort(-areas).tolist()
             # Re-order overlapped instances in descending order.
@@ -879,22 +1054,49 @@ class Visualizer:
             keypoints = keypoints[sorted_idxs] if keypoints is not None else None
             box_length = [box_length[idx] for idx in sorted_idxs]
 
+            #obtain top_idx after sort
+            top_idx = [sorted_idxs.index(idx-gt_length)+gt_length for idx in top_idx]
+
+
+        #reconcat gt boxes
+        if gt_length:
+            boxes = np.concatenate((gt_boxes,boxes),axis=0)
+            labels = np.concatenate((gt_labels,labels),axis=0)
+            if masks is not None:
+                masks = np.concatenate((gt_masks,masks),axis=0)
+            assigned_colors = np.concatenate((gt_assigned_colors,assigned_colors),axis=0)
+            if keypoints is not None:
+                keypoints = np.concatenate((gt_keypoints,keypoints),axis=0)
+            box_length = np.concatenate((gt_box_length,box_length),axis=0)
+
         for i in range(num_instances):
             color = assigned_colors[i]
             linewidth = box_length[i]
+            alpha_i = alpha[i]
             if boxes is not None:
-                self.draw_box_rpn(boxes[i], edge_color=color,linewidth=linewidth)
+                self.draw_box_rpn(boxes[i], alpha = alpha_i, edge_color=color,linewidth=linewidth)
 
             if masks is not None:
                 for segment in masks[i].polygons:
                     self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
 
-            if labels is not None:
+            if labels[i] is not None:
                 # first get a box
                 if boxes is not None:
+                    #draw top IoU boxes at the top
                     x0, y0, x1, y1 = boxes[i]
-                    text_pos = (x0, y0)  # if drawing boxes, put text on the box corner.
                     horiz_align = "left"
+                    if i in top_idx:
+                        text_pos = (x0, y0)  
+                        vert_align="bottom"
+                    #draw only best score boxes in the center
+                    else:
+                        text_pos = (x0, (y0+y1)/2)
+                        vert_align="center"
+                    #display gt box text in bottom
+                    if i < gt_length:
+                        text_pos = (x0, (((y0+y1)/2)+y1)/2)
+                        vert_align="top"
                 elif masks is not None:
                     # skip small mask without polygon
                     if len(masks[i].polygons) == 0:
@@ -906,6 +1108,7 @@ class Visualizer:
                     # median is less sensitive to outliers.
                     text_pos = np.median(masks[i].mask.nonzero(), axis=1)[::-1]
                     horiz_align = "center"
+                    vert_align="top"
                 else:
                     continue  # drawing the box confidence for keypoints isn't very useful.
                 # for small objects, draw text at the side to avoid occlusion
@@ -923,14 +1126,15 @@ class Visualizer:
                 lighter_color = self._change_color_brightness(color, brightness_factor=0.7)
                 font_size = (
                     np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
-                    * 0.5
+                    * 0.4
                     * self._default_font_size
                 )
-                self.draw_text(
+                self.draw_text_rpn(
                     labels[i],
                     text_pos,
                     color=lighter_color,
                     horizontal_alignment=horiz_align,
+                    vertical_alignment=vert_align,
                     font_size=font_size,
                 )
 
@@ -1039,6 +1243,53 @@ class Visualizer:
     """
     Primitive drawing functions:
     """
+    def draw_text_rpn(
+        self,
+        text,
+        position,
+        *,
+        font_size=None,
+        color="g",
+        horizontal_alignment="center",
+        vertical_alignment="top",
+        rotation=0
+    ):
+        """
+        Args:
+            text (str): class label
+            position (tuple): a tuple of the x and y coordinates to place text on image.
+            font_size (int, optional): font of the text. If not provided, a font size
+                proportional to the image width is calculated and used.
+            color: color of the text. Refer to `matplotlib.colors` for full list
+                of formats that are accepted.
+            horizontal_alignment (str): see `matplotlib.text.Text`
+            rotation: rotation angle in degrees CCW
+
+        Returns:
+            output (VisImage): image object with text drawn.
+        """
+        if not font_size:
+            font_size = self._default_font_size
+
+        # since the text background is dark, we don't want the text to be dark
+        color = np.maximum(list(mplc.to_rgb(color)), 0.2)
+        color[np.argmax(color)] = max(0.8, np.max(color))
+
+        x, y = position
+        self.output.ax.text(
+            x,
+            y,
+            text,
+            size=font_size * self.output.scale,
+            family="sans-serif",
+            bbox={"facecolor": "black", "alpha": 0.8, "pad": 0.2, "edgecolor": "none"},
+            verticalalignment=vertical_alignment,
+            horizontalalignment=horizontal_alignment,
+            color=color,
+            zorder=10,
+            rotation=rotation,
+        )
+        return self.output
 
     def draw_text(
         self,

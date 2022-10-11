@@ -170,20 +170,31 @@ def fast_rcnn_inference_single_image(
     scores = scores[:, :-1]
     scores_bf_multiply = scores_bf_multiply[:, :-1]
 
+    num_bbox_reg_classes = boxes.shape[1] // 4
+    # Convert to Boxes to use the `clip` function ...
+    boxes = Boxes(boxes.reshape(-1, 4))
+    boxes.clip(image_shape)
+    boxes = boxes.tensor.view(-1, num_bbox_reg_classes, 4)  # R x C x 4
+
     #return all scores from RPN if get bg_cls_boxes
     if bg_cls_scores:
 
         result = Instances(image_shape)
-        scores_max, idx_max = scores.max(dim=1)
-
-        # #TODO test sort by scores
-        # scores_max, idx = scores_max.sort(descending=True)
-        # boxes = boxes[idx]  # topk x 1 x 4
-        # idx_max = idx_max[idx]
-        # original_scores= original_scores[idx]
-        # scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx]
         
+        #get and sort scores by max of class label
+        scores_max, idx_max = scores.max(dim=1)
         scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx_max]
+        scores_max, idx = scores_max.sort(descending=True)
+        idx_max = idx_max[idx]
+        original_scores= original_scores[idx]
+        scores_bf_multiply = scores_bf_multiply[idx]
+        if num_bbox_reg_classes == 1:
+            boxes = boxes[idx, 0]
+        else:
+            boxes = boxes[idx,idx_max]
+        #should be equal if not multiply by rpn
+        #assert torch.equal(scores_max,scores_bf_multiply)
+
         result.pred_boxes = Boxes(boxes)
         result.scores = scores_max
         if vis: # visualization: convert to the original scores before multiplying RPN scores
@@ -194,11 +205,6 @@ def fast_rcnn_inference_single_image(
 
 
     # print("before adding dup: ",scores.size(0))
-    num_bbox_reg_classes = boxes.shape[1] // 4
-    # Convert to Boxes to use the `clip` function ...
-    boxes = Boxes(boxes.reshape(-1, 4))
-    boxes.clip(image_shape)
-    boxes = boxes.tensor.view(-1, num_bbox_reg_classes, 4)  # R x C x 4
 
     # 1. Filter results based on detection scores. It can make NMS more efficient
     #    by filtering out low-confidence detections.
@@ -257,15 +263,16 @@ def fast_rcnn_inference_single_image(
         keep, soft_nms_scores = batched_soft_nms(
             boxes,
             scores,
-            filter_inds[:, 1],
+            lvl,
             soft_nms_method,
             soft_nms_sigma,
             nms_thresh,
             soft_nms_prune,
         )
-        scores[keep] = soft_nms_scores   
+        scores[keep] = soft_nms_scores
+        # TODO test soft nms with new scores   
         # scores_bf_multiply? (TBD)
-        scores_bf_multiply = scores
+        # scores_bf_multiply = scores
     if topk_per_image >= 0:
         keep = keep[:topk_per_image]
     boxes, scores, filter_inds = boxes[keep], scores[keep], filter_inds[keep]

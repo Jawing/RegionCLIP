@@ -48,13 +48,13 @@ def create_instances(predictions, image_size):
     score = score[chosen]
     bbox = np.asarray([predictions[i]["bbox"] for i in chosen]).reshape(-1, 4)
     bbox = BoxMode.convert(bbox, BoxMode.XYWH_ABS, BoxMode.XYXY_ABS)
-
+    all_scores = np.asarray([predictions[i]["all_scores"] for i in chosen])
     labels = np.asarray([dataset_id_map(predictions[i]["category_id"]) for i in chosen])
 
     ret.scores = score
     ret.pred_boxes = Boxes(bbox)
     ret.pred_classes = labels
-
+    ret.all_scores = all_scores
     try:
         ret.pred_masks = [predictions[i]["segmentation"] for i in chosen]
     except KeyError:
@@ -185,8 +185,11 @@ if __name__ == "__main__":
     os.makedirs(args.output, exist_ok=True)
     cnt = 0
     iou_thresholds=0.5
+    #number of total bounding boxes
     num_pos = 0
-
+    #number of bounding boxes with no overlap
+    num_nol = 0
+    no_overlap_names = []
     for dic in tqdm.tqdm(dicts):
         cnt += 1
         if cnt < 0: #100:
@@ -222,6 +225,11 @@ if __name__ == "__main__":
             for obj in anno
             if obj["iscrowd"] == 0
         ]
+        gt_classes = np.array([
+            obj["category_id"]-1
+            for obj in anno
+            if obj["iscrowd"] == 0
+        ])
         gt_boxes = torch.as_tensor(gt_boxes).reshape(-1, 4)  # guard against no boxes
         gt_boxes = Boxes(gt_boxes)
         gt_areas = torch.as_tensor([obj["area"] for obj in anno if obj["iscrowd"] == 0])
@@ -231,29 +239,146 @@ if __name__ == "__main__":
 
         num_pos += len(gt_boxes)
 
-        #calculate and filter iou over ground truth boxes
-        overlaps = pairwise_iou(predictions.pred_boxes, gt_boxes)
-        overlaps = overlaps > iou_thresholds
+        #calculate and filter iou overlaps over ground truth boxes
+        overlaps_scores = pairwise_iou(predictions.pred_boxes, gt_boxes)
+        #store percentage of bounding box overlaping
+        pt_overlap = []
+        overlaps = overlaps_scores > iou_thresholds
         overlaps_each_bbox = torch.sum(overlaps,dim = 0)
+        no_overlap= False
         for i,v in enumerate(overlaps_each_bbox):
             print(f"GT bbox# {i} has {v} RPN bbox overlapping")
+            if v == 0:
+                num_nol += 1
+                no_overlap= True
+            pt_overlap.append(f"{v}/{overlaps_scores.size(0)}")
+        #if no overlap print image name
+        if no_overlap==True:
+            print(f"No overlap in {dic['file_name']}")
+            no_overlap_names.append(dic['file_name'])
+
+        #get best confidence score from all overlaps
+        #store the percentage of bounding box overlaping with gt class as top
+        pt_top_gt = []
+
+        best_idx = []
+        best_gt_scores = []
+        best_ious = []
+        for i, b in enumerate(overlaps.T):
+            #get idx of each overlap
+            b_overlap_idx = b.nonzero().T.tolist()[0]
+            b_all_scores = predictions.all_scores[b_overlap_idx][:,:-1] #select everything other than bg class
+            b_scores, c_idx = torch.max(torch.from_numpy(b_all_scores),dim=1)
+            #TODO can filter based on b_score for n_top_gt within score threshold
+            #output number of top_gt class detected over all detected boxes overlap
+            n_top_gt = c_idx.tolist().count(gt_classes[i])
+            pt_top_gt.append(f"{n_top_gt}")
+            if len(b_overlap_idx) == 0:
+                continue
+            b_score, b_idx = torch.max(b_scores, dim = 0)
+            b_idx = b_overlap_idx[b_idx.item()]
+            best_ious.append(overlaps_scores.T[i,b_idx].item())
+            best_gt_scores.append(predictions.all_scores[b_idx,gt_classes[i]])
+            best_idx.append(b_idx)
+        best_all_scores = predictions.all_scores[best_idx]
+        best_classes = predictions.pred_classes[best_idx]
+        best_scores = predictions.scores[best_idx]
+        best_boxes= predictions.pred_boxes.tensor[best_idx]
+        #print(best_scores,best_idx)
+
+        #get idx of all overlapping boxes
         overlaps = torch.any(overlaps,dim = 1)
         overlap_idx = overlaps.nonzero().T.tolist()[0]
 
-        
+        #get top ious of the filtered bounding boxes
+        top_ious = []
+        top_idx = []
+        top_gt_scores = []
+        top_all_scores=[]
+        for i, b in enumerate(overlaps_scores.T):
+            #b = b.view(-1,1)
+            max_iou, max_idx = torch.max(b,dim=0)
+            #filter the overlapping bounding boxes based on iou
+            if max_iou > iou_thresholds:
+                top_ious.append(max_iou.item())
+                top_idx.append(max_idx.item())
+                top_gt_scores.append(predictions.all_scores[max_idx.item(),gt_classes[i]])
+                top_all_scores.append(predictions.all_scores[max_idx.item()])
+        #print(top_ious,top_idx)
+        top_classes = predictions.pred_classes[top_idx]
+        top_scores = predictions.scores[top_idx]
+        top_boxes= predictions.pred_boxes.tensor[top_idx]
+        top_best_eq= []
+        #print/save diff stats if top iou and best scores are the same
+        for i,idx in enumerate(top_idx):
+            if top_idx[i] == best_idx[i]:
+                top_best_eq.append(True)
+            else:
+                top_best_eq.append(False)
+
 
 
         ############
-        #define custom colors and lengths
+        #define custom colors and lengths and shades
+        #set colors for gt boxes
+        colors_gt = [np.array(list(mplc.BASE_COLORS['w'])) for _ in range(len(anno))]
+        #set colors for prediction boxes
         colors = [np.array(list(mplc.BASE_COLORS['m'])) for _ in range(len(unique_box_pred))]
         colors = np.array(colors)
-        #TODO extend a list of colors with len(predictions)
+        #add color for overlapping boxes
         colors[overlap_idx] = list(mplc.BASE_COLORS['c'])
+        #add color for top overlapping box
+        colors[top_idx] = list(mplc.BASE_COLORS['y'])
+        #add color for best overlapping box
+        colors[best_idx] = list(mplc.BASE_COLORS['y'])
+        #combine
+        colors = np.concatenate((colors_gt,colors),axis=0)
+
+        #set length for gt boxes
+        box_length_gt = [8.0 for _ in range(len(anno))]
+        #set length for prediction boxes
         box_length = [1.0 for _ in range(len(unique_box_pred))]
         box_length = np.array(box_length)
-        box_length[overlap_idx] = 6.0
+        #set length for overlapping boxes
+        box_length[overlap_idx] = 3.0
+        #set length for top overlapping box
+        box_length[top_idx] = 6.0
+        #set length for best overlapping box
+        box_length[best_idx] = 6.0
+        #combine
+        box_length = np.concatenate((box_length_gt,box_length),axis=0)
+
+
+        #set transparency for gt boxes
+        alpha_gt = [1.0 for _ in range(len(anno))]
+        #set length for prediction boxes
+        alpha = [0.3 for _ in range(len(unique_box_pred))]
+        alpha = np.array(alpha)
+        #set length for overlapping boxes
+        alpha[overlap_idx] = 0.5
+        #set length for top overlapping box
+        alpha[top_idx] = 1.0
+        #set length for best overlapping box
+        alpha[best_idx] = 1.0
+        #combine
+        alpha = np.concatenate((alpha_gt,alpha),axis=0)
+
+        #reshift idx with gt add
+        top_idx = np.array(top_idx)
+        top_idx +=len(gt_classes)
+        best_idx = np.array(best_idx)
+        best_idx +=len(gt_classes)
+
+        #get ground truth boxes and append stats next to the class label
+        gt_dict = {'gt_scores':np.ones_like(gt_classes,dtype=np.float32),'gt_boxes':gt_boxes,'gt_classes':gt_classes}
+        top_dict = {'top_scores':top_scores,'top_boxes':top_boxes,'top_classes':top_classes,'top_idx':top_idx,
+                'top_iou':top_ious,'top_gt_scores':top_gt_scores,'top_all_scores':top_all_scores,'top_best_eq': top_best_eq}
+        best_dict = {'best_scores':best_scores,'best_boxes':best_boxes,'best_classes':best_classes,'best_idx':best_idx,
+                'best_iou':best_ious,'best_gt_scores':best_gt_scores,'best_all_scores':best_all_scores}
+        stats = {'pt_overlap':pt_overlap, 'pt_top_gt':pt_top_gt}
+
         vis = Visualizer(img, metadata)
-        vis_pred = vis.draw_instance_predictions(predictions, colors = colors,inc_label=False,box_length = box_length).get_image()
+        vis_pred = vis.draw_instance_predictions_rpn(predictions, gt_dict, top_dict,best_dict, stats, colors = colors,inc_label=True,box_length = box_length,alpha=alpha).get_image()
 
         # doesn't draw gt
         # vis = Visualizer(img, metadata)
@@ -261,3 +386,9 @@ if __name__ == "__main__":
 
         concat = vis_pred # np.concatenate((vis_pred, vis_gt), axis=1)
         cv2.imwrite(os.path.join(args.output, basename), concat[:, :, ::-1])
+    
+    print(f"Total bounding boxes: {num_pos}")
+    print(f"Bounding boxes with no overlap: {num_nol}")
+    print(f"Not detected by RPN: {(num_nol/num_pos)*100:.2f}%")
+    print(f"Images location without overlap:")
+    print('\n'.join('{}'.format(k) for k in no_overlap_names))

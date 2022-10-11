@@ -5,6 +5,7 @@ MODEL:
     NUM_CLASSES: 5
     NMS_THRESH_TEST: 0.2 #Defaults to 0.5
     # SCORE_THRESH_TEST: 0.1 #Defaults to 0.001
+    # SOFT_NMS_ENABLED: True
   CLIP:
     #TODO when NO_BOX_DELTA: True NMS_THRESH_TEST = OFFLINE_RPN_NMS should not change bbox number output
     # NO_BOX_DELTA: True #set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
@@ -21,12 +22,12 @@ MODEL:
   #   PRE_NMS_TOPK_TEST: 12000 #default 6000
   #   POST_NMS_TOPK_TEST: 2000 #default 1000
 DATASETS:
-  TRAIN: ("lvis_v1_train_custom_img",) #not needed for --eval-only
-  TEST: ("lvis_v1_val_custom_img",)  #custom images
-  # TRAIN: ("humanware_train",) #custom images result stored in lvis_instances_results.json
-  # TEST: ("humanware_test",)
-  # Below doesn't refer to custom image folder but to set folder
-  # TRAIN: ("humanware_train_custom_img",) #custom images only works with lvis settings? need lvis model?
-  # TEST: ("humanware_val_custom_img",)
-TEST:
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_test_custom",)
+  # TEST: ("humanware_test_collected",)
+  # TEST: ("humanware_test_basic",)
+  # TEST: ("humanware_test_full",)
+  # TEST: ("humanware_test_awake",)
+  # TEST: ("lvis_v1_val_custom_img",)  #custom images for lvis dataset
+  TEST:
   DETECTIONS_PER_IMAGE: 1000 #set equal POST_NMS_TOPK_TEST to detect all from RPN

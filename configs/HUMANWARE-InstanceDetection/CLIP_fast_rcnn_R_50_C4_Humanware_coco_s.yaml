@@ -34,3 +34,4 @@ INPUT:
 DATASETS:
   TRAIN: ("humanware_train_full",)
   TEST: ("humanware_val_full",)
+SEED: 42 #default -1 (maximize randomness) test seed set (24,42,50,80,100)
