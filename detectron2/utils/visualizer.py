@@ -237,7 +237,7 @@ def _create_text_labels_rpn(classes, scores, class_names, top_dict,best_dict, st
     labels = [None for _ in range(len(classes))]
     #add ground truth labels
     if classes is not None and len(stats['pt_overlap']) > 0:
-        labels[:len(stats['pt_overlap'])] = ["{} Overlap:{} \nGT Overlap:{}".format(class_names[i], s,gt) for i,s,gt in zip(classes[:len(stats['pt_overlap'])],stats['pt_overlap'],stats['pt_top_gt'])]
+        labels[:len(stats['pt_overlap'])] = ["{} Overlap:{} \nTop GT Overlap:{} \nGT {} Overlap:{}".format(class_names[i], s,gt,stats['threshold'],to) for i,s,gt,to in zip(classes[:len(stats['pt_overlap'])],stats['pt_overlap'],stats['pt_top_gt'],stats['pt_overlap_t'])]
     #optional add top/best class and score labels    
     if len(best_dict['best_classes']) > 0 or len(top_dict['top_classes']) > 0:
         #print best class score
