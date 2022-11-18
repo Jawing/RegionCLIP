@@ -174,6 +174,7 @@ _C.DATASETS.TEST_SET = 'val'
 # The maximum total input sequence length after WordPiece tokenization
 # Sequences longer than this will be truncated, and sequences shorter than this will be padded.
 _C.DATASETS.MAX_SEQ_LENGTH = 35  
+_C.DATASETS.BOOSTING = False
 
 # -----------------------------------------------------------------------------
 # DataLoader

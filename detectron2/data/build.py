@@ -225,7 +225,7 @@ def print_instances_class_histogram(dataset_dicts, class_names):
     )
 
 
-def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, proposal_files=None):
+def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, proposal_files=None,boosting = False):
     """
     Load and prepare dataset dicts for instance detection/segmentation and semantic segmentation.
 
@@ -272,7 +272,8 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
             pass
 
     assert len(dataset_dicts), "No valid data found in {}.".format(",".join(names))
-    dataset_dicts = filter_images_for_boosting(dataset_dicts, images_names=[])
+    if boosting:
+        dataset_dicts = filter_images_for_boosting(dataset_dicts, images_names=[])
     return dataset_dicts
 
 
@@ -364,6 +365,7 @@ def _train_loader_from_config(cfg, mapper=None, *, dataset=None, sampler=None):
             if cfg.MODEL.KEYPOINT_ON
             else 0,
             proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
+            boosting = cfg.DATASETS.BOOSTING,
         )
         _log_api_usage("dataset." + cfg.DATASETS.TRAIN[0])
 
