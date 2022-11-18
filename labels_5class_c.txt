@@ -3,3 +3,5 @@ keychain
 Trash can
 wallet
 Wall_outlet
+cup
+pot

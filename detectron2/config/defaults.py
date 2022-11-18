@@ -221,9 +221,15 @@ _C.MODEL.CLIP.FOCAL_SCALED_LOSS = None # if not None (float value for gamma), ap
 _C.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA = -1
 _C.MODEL.CLIP.BG_CLS_SCORE = False #include Background classification score for inference
 _C.MODEL.CLIP.CLS_ID_NMS = False #class independent nms for inference head (used with Box_delta)
+_C.MODEL.CLIP.FREEZE_BOX_REG = False #freeze box regression training head
+_C.MODEL.CLIP.FREEZE_TEXT_EMB = True #freeze text embedding training head
 _C.MODEL.CLIP.OFFLINE_RPN_NMS_THRESH = None # the threshold of NMS in offline RPN
 _C.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TEST = None # the number of region proposals from offline RPN
 _C.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST = None # the number of region proposals from offline RPN before nms
+_C.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TRAIN = None # the number of region proposals from offline RPN
+_C.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TRAIN = None # the number of region proposals from offline RPN before nms
+_C.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TRAIN = None # the number of region proposals from offline RPN before nms
+_C.MODEL.CLIP.OFFLINE_RPN_BATCH_SIZE_PER_IMAGE = None #default 256
 _C.MODEL.CLIP.PRETRAIN_IMG_TXT_LEVEL = True # if True, pretrain model using image-text level matching
 _C.MODEL.CLIP.PRETRAIN_ONLY_EOT = False # if True, use end-of-token emb to match region features, in image-text level matching
 _C.MODEL.CLIP.PRETRAIN_RPN_REGIONS = None # if not None, the number of RPN regions per image during pretraining
@@ -241,6 +247,9 @@ _C.MODEL.CLIP.TEACHER_POOLER_RESOLUTION = 14 # RoIpooling resolution of teacher 
 _C.MODEL.CLIP.TEXT_EMB_DIM = 1024 # the dimension of precomputed class embeddings
 _C.INPUT_DIR = "./datasets/custom_images" # the folder that includes the images for region feature extraction
 _C.MODEL.CLIP.GET_CONCEPT_EMB = False # if True (extract concept embedding), a language encoder will be created
+_C.MODEL.CLIP.FREEZE_RPN = True # if False train RPN at the same time
+_C.MODEL.CLIP.FREEZE_RPN_BACKBONE = True # if False train RPN_BACKBONE at the same time
+_C.MODEL.CLIP.FREEZE_BACKBONE = False # if True freeze region feature BACKBONE 
 
 # ---------------------------------------------------------------------------- #
 # Backbone options
@@ -634,6 +643,10 @@ _C.MODEL.RESNETS.DEFORM_NUM_GROUPS = 1
 # Solver
 # ---------------------------------------------------------------------------- #
 _C.SOLVER = CN()
+_C.SOLVER.ADAM = CN({"ENABLED": False}) #use adam optimizer
+_C.SOLVER.ADAM.BETAS = (0.9, 0.999) #betas
+_C.SOLVER.ADAM.EPS = 1e-08 #eps
+_C.SOLVER.ADAM.AMSGRAD = False #amsgrad feature
 
 # See detectron2/solver/build.py for LR scheduler options
 _C.SOLVER.LR_SCHEDULER_NAME = "WarmupMultiStepLR"

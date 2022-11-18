@@ -469,6 +469,11 @@ class RPN(nn.Module):
         if self.training:
             assert gt_instances is not None, "RPN requires gt_instances in training!"
             gt_labels, gt_boxes = self.label_and_sample_anchors(anchors, gt_instances)
+            # for gt_label in gt_labels:
+            #     print("counts: 0,-1,1")
+            #     print(gt_label.tolist().count(0))
+            #     print(gt_label.tolist().count(-1))
+            #     print(gt_label.tolist().count(1))
             losses = self.losses(
                 anchors, pred_objectness_logits, gt_labels, pred_anchor_deltas, gt_boxes
             )

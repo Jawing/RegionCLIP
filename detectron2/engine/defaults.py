@@ -575,6 +575,16 @@ please implement `build_evaluator()` in subclasses (see train_net.py for example
 Alternatively, you can call evaluation functions yourself (see Colab balloon tutorial for example).
 """
         )
+    @classmethod
+    def get_data(cls, cfg, model, evaluators=None):
+        """
+        gets dataloader for the test set
+        """
+        #only 1 dataset at a time
+        assert len(cfg.DATASETS.TEST) == 1
+        return cls.build_test_loader(cfg, cfg.DATASETS.TEST[0])
+
+
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):

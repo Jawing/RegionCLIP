@@ -13,8 +13,8 @@ MODEL:
     # MULTIPLY_RPN_SCORE: True #uncomment for >100% scores with objectiveness logits
     VIS: True # Note: visualize the scores before multiplying RPN scores, if any
     BG_CLS_SCORE: True #generate all rpn bbox and scores include background bboxes and scores
-    OFFLINE_RPN_PRE_NMS_TOPK_TEST: 12000 #default 6000
-    OFFLINE_RPN_POST_NMS_TOPK_TEST: 2000 #default 1000
+    OFFLINE_RPN_PRE_NMS_TOPK_TEST: 24000 #default 6000
+    OFFLINE_RPN_POST_NMS_TOPK_TEST: 4000 #default 1000
     CLS_ID_NMS: True #default False
   # doesn't register use above
   # RPN:
@@ -25,9 +25,9 @@ DATASETS:
   TRAIN: ("humanware_train_full",)
   # TEST: ("humanware_test_custom",)
   # TEST: ("humanware_test_collected",)
-  TEST: ("humanware_test_basic",)
+  # TEST: ("humanware_test_basic",)
   # TEST: ("humanware_test_full",)
-  # TEST: ("humanware_test_awake",)
+  TEST: ("humanware_test_awake",)
   # TEST: ("lvis_v1_val_custom_img",)  #custom images for lvis dataset
 TEST:
   DETECTIONS_PER_IMAGE: 1000 #set equal POST_NMS_TOPK_TEST to detect all from RPN

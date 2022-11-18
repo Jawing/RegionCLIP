@@ -61,7 +61,7 @@ def generate_images(plt_names,filename1,filename2,filename3):
     min_list = min(xvals+yvals+zvals)
     max_list = max(xvals+yvals+zvals)
     plt.xticks(ind+width,xtick_names)
-    plt.yticks(np.arange(0,max_list+5,5))
+    plt.yticks(np.arange(0,max_list+1,1))
     plt.savefig(f"./vis/{plt_names}_fig_per_nol.jpg")
     plt.clf()
 
@@ -105,15 +105,15 @@ def generate_images(plt_names,filename1,filename2,filename3):
     min_list = min(xvals+yvals+zvals)
     max_list = max(xvals+yvals+zvals)
     plt.xticks(ind+width,xtick_names)
-    plt.yticks(np.arange(0,max_list+5,5))
+    plt.yticks(np.arange(0,max_list+1,1))
     plt.savefig(f"./vis/{plt_names}_fig_per_nol_t.jpg")
     plt.clf()
 
 #change names of files to visualize
 #dataset = 'custom' 
 #dataset = 'hw'
-dataset = 'basic'
-
+#dataset = 'basic'
+dataset = 'awake'
 plt_names = f'{dataset}_0509_6k1k'
 filename1 = f'{dataset}_rpn_fp_05_6k_1k'
 filename2 = f'{dataset}_rpn_fp_07_6k_1k'

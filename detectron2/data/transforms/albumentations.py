@@ -23,8 +23,8 @@ class AlbumentationsTransform(Transform):
             denorm_bboxes = []
             height = self.params['rows']
             width = self.params['cols']
-            print(str(self.aug.__class__))
-            #TODO pass in all bbox coordinates as albumentation format
+            #print(str(self.aug.__class__))
+
             #custom classes for albumentations need to be converted to albumentation bbox normalized format
             #if first box is in albumentations format, rest will be as well assume
             if box[0].sum() > 4 and 'PadIfNeeded' in str(self.aug.__class__):

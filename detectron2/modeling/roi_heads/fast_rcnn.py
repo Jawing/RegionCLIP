@@ -180,22 +180,23 @@ def fast_rcnn_inference_single_image(
     if bg_cls_scores:
 
         result = Instances(image_shape)
-        
-        #get and sort scores by max of class label
+
         scores_max, idx_max = scores.max(dim=1)
         scores_bf_multiply = scores_bf_multiply[torch.arange(len(scores)),idx_max]
-        scores_max, idx = scores_max.sort(descending=True)
-        idx_max = idx_max[idx]
-        original_scores= original_scores[idx]
-        scores_bf_multiply = scores_bf_multiply[idx]
-        if num_bbox_reg_classes == 1:
-            boxes = boxes[idx, 0]
-        else:
-            boxes = boxes[idx,idx_max]
+        #get and sort scores by max of class label when VIS is false
+        if not vis:
+            scores_max, idx = scores_max.sort(descending=True)
+            idx_max = idx_max[idx]
+            original_scores= original_scores[idx]
+            scores_bf_multiply = scores_bf_multiply[idx]
+            if num_bbox_reg_classes == 1:
+                boxes = boxes[idx, 0]
+            else:
+                boxes = boxes[idx,idx_max]
         #should be equal if not multiply by rpn
         #assert torch.equal(scores_max,scores_bf_multiply)
 
-        result.pred_boxes = Boxes(boxes)
+        result.pred_boxes = Boxes(boxes[:,0])
         result.scores = scores_max
         if vis: # visualization: convert to the original scores before multiplying RPN scores
             result.scores = scores_bf_multiply         
@@ -487,6 +488,9 @@ class FastRCNNOutputLayers(nn.Module):
         openset_test: None,
         bg_cls_scores: bool = False,
         cls_id_nms: bool = False,
+        freeze_box_reg: bool = False,
+        model_weights: None,
+        freeze_text_emb: bool = True,
     ):
         """
         NOTE: this interface is experimental.
@@ -523,37 +527,63 @@ class FastRCNNOutputLayers(nn.Module):
         self.loss_weight = loss_weight
         self.bg_cls_scores = bg_cls_scores
         self.cls_id_nms = cls_id_nms
+        self.freeze_box_reg = freeze_box_reg
+        self.freeze_text_emb = freeze_text_emb
+        self.model_weights = model_weights
         # RegionCLIP
         self.num_classes = num_classes
         if isinstance(input_shape, int):  # some backward compatibility
             input_shape = ShapeSpec(channels=input_shape)
         input_size = input_shape.channels * (input_shape.width or 1) * (input_shape.height or 1)
-                    
+        # #same input_size for loading pre embedded weights
+        # if self.model_weights is not None: 
+        #     input_size = clip_cls_emb[3]
+
         self.use_clip_cls_emb = clip_cls_emb[0]
         if self.use_clip_cls_emb: # use CLIP text embeddings as classifier's weights
             input_size = clip_cls_emb[3] if clip_cls_emb[2] in ['CLIPRes5ROIHeads', 'CLIPStandardROIHeads'] else input_size
-            text_emb_require_grad = False
-            self.use_bias = False
+            if self.freeze_text_emb:
+                text_emb_require_grad = False
+                self.use_bias = False
+            else:
+                text_emb_require_grad = True
+                self.use_bias = True
+            
             self.temperature = openset_test[2] # 0.01 is default for CLIP
 
             # class embedding
             self.cls_score = nn.Linear(input_size, num_classes, bias=self.use_bias)  
-            with torch.no_grad():
+            if self.freeze_text_emb:
+                with torch.no_grad():
+                    if clip_cls_emb[1] is not None: # it could be None during region feature extraction
+                        pre_computed_w = torch.load(clip_cls_emb[1])  # [num_classes, 1024] for RN50
+                        self.cls_score.weight.copy_(pre_computed_w)
+                    self.cls_score.weight.requires_grad = text_emb_require_grad # freeze embeddings
+                    if self.use_bias:
+                        nn.init.constant_(self.cls_score.bias, 0)
+            else:
                 if clip_cls_emb[1] is not None: # it could be None during region feature extraction
-                    pre_computed_w = torch.load(clip_cls_emb[1])  # [num_classes, 1024] for RN50
-                    self.cls_score.weight.copy_(pre_computed_w)
+                        pre_computed_w = torch.load(clip_cls_emb[1])  # [num_classes, 1024] for RN50
+                        with torch.no_grad():
+                            self.cls_score.weight.copy_(pre_computed_w)
                 self.cls_score.weight.requires_grad = text_emb_require_grad # freeze embeddings
                 if self.use_bias:
                     nn.init.constant_(self.cls_score.bias, 0)
             
             # background embedding
             self.cls_bg_score = nn.Linear(input_size, 1, bias=self.use_bias)  
-            with torch.no_grad():
+            if self.freeze_text_emb:
+                with torch.no_grad():
+                    nn.init.constant_(self.cls_bg_score.weight, 0)  # zero embeddings
+                    self.cls_bg_score.weight.requires_grad = text_emb_require_grad
+                    if self.use_bias:
+                        nn.init.constant_(self.cls_bg_score.bias, 0)
+            else:
                 nn.init.constant_(self.cls_bg_score.weight, 0)  # zero embeddings
                 self.cls_bg_score.weight.requires_grad = text_emb_require_grad
                 if self.use_bias:
                     nn.init.constant_(self.cls_bg_score.bias, 0)
-
+            
             # class embedding during test 
             self.test_cls_score = None
             if openset_test[1] is not None:  # openset test enabled
@@ -574,8 +604,22 @@ class FastRCNNOutputLayers(nn.Module):
         num_bbox_reg_classes = 1 if cls_agnostic_bbox_reg else num_classes
         box_dim = len(box2box_transform.weights)
         self.bbox_pred = nn.Linear(input_size, num_bbox_reg_classes * box_dim)
-        nn.init.normal_(self.bbox_pred.weight, std=0.001)
-        nn.init.constant_(self.bbox_pred.bias, 0)
+        if self.freeze_box_reg:
+            with torch.no_grad():
+                #load weights, checkpoint already loads?
+                # if self.model_weights is not None: 
+                #     box_reg_weights = torch.load(self.model_weights)['model']['roi_heads.box_predictor.bbox_pred.weight']  # [4, 1024] for RN50
+                #     box_reg_bias = torch.load(self.model_weights)['model']['roi_heads.box_predictor.bbox_pred.bias']
+                #     self.bbox_pred.weight.copy_(box_reg_weights)
+                #     self.bbox_pred.bias.copy_(box_reg_bias)
+                # else:
+                nn.init.normal_(self.bbox_pred.weight, std=0.001)
+                nn.init.constant_(self.bbox_pred.bias, 0)
+                self.bbox_pred.weight.requires_grad = False # freeze embeddings
+        #    self.bbox_pred=None
+        else:
+            nn.init.normal_(self.bbox_pred.weight, std=0.001)
+            nn.init.constant_(self.bbox_pred.bias, 0)
 
         # training options
         self.cls_loss_weight = None
@@ -615,6 +659,9 @@ class FastRCNNOutputLayers(nn.Module):
             "bg_cls_loss_weight"    : cfg.MODEL.CLIP.BG_CLS_LOSS_WEIGHT,
             "bg_cls_scores"         : cfg.MODEL.CLIP.BG_CLS_SCORE,
             "cls_id_nms"         : cfg.MODEL.CLIP.CLS_ID_NMS,
+            "freeze_box_reg"         : cfg.MODEL.CLIP.FREEZE_BOX_REG,
+            "freeze_text_emb"         : cfg.MODEL.CLIP.FREEZE_TEXT_EMB,
+            "model_weights"        : cfg.MODEL.WEIGHTS,
             "multiply_rpn_score"    : (cfg.MODEL.CLIP.MULTIPLY_RPN_SCORE, cfg.MODEL.CLIP.VIS),
             "openset_test"          : (cfg.MODEL.CLIP.OPENSET_TEST_NUM_CLASSES, cfg.MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH, \
                                        cfg.MODEL.CLIP.CLSS_TEMP, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS, cfg.MODEL.CLIP.FOCAL_SCALED_LOSS_ALPHA)
@@ -663,7 +710,13 @@ class FastRCNNOutputLayers(nn.Module):
             scores = self.cls_score(x)
         
         # box regression
-        proposal_deltas = self.bbox_pred(x)
+        if self.freeze_box_reg:
+            #return scores
+            #with torch.no_grad():  #comment out for multigpu
+                self.bbox_pred.eval() 
+                proposal_deltas = self.bbox_pred(x)
+        else:
+            proposal_deltas = self.bbox_pred(x)
         return scores, proposal_deltas
 
     def losses(self, predictions, proposals):
@@ -677,6 +730,9 @@ class FastRCNNOutputLayers(nn.Module):
         Returns:
             Dict[str, Tensor]: dict of losses
         """
+        # if self.freeze_box_reg:
+        #     scores = predictions
+        # else:
         scores, proposal_deltas = predictions
 
         # parse classification outputs
@@ -708,6 +764,11 @@ class FastRCNNOutputLayers(nn.Module):
         else:    
             loss_cls = cross_entropy(scores, gt_classes, reduction="mean") if self.cls_loss_weight is None else \
                        cross_entropy(scores, gt_classes, reduction="mean", weight=self.cls_loss_weight)
+
+        # if self.freeze_box_reg:
+        #     losses = {"loss_cls": loss_cls,
+        #             "loss_box_reg": torch.zeros_like(loss_cls)}
+        # else:
         losses = {
             "loss_cls": loss_cls,
             "loss_box_reg": self.box_reg_loss(
@@ -879,12 +940,13 @@ class FastRCNNOutputLayers(nn.Module):
         """
         if not len(proposals):
             return []
+        #if not self.freeze_box_reg:
         _, proposal_deltas = predictions
         num_prop_per_image = [len(p) for p in proposals]
         proposal_boxes = cat([p.proposal_boxes.tensor for p in proposals], dim=0)
 
         # don't apply box delta, such as GT boxes
-        if self.no_box_delta:
+        if self.no_box_delta: # or self.freeze_box_reg:
             predict_boxes = proposal_boxes
         # apply box delta
         else:
@@ -908,6 +970,9 @@ class FastRCNNOutputLayers(nn.Module):
                 A list of Tensors of predicted class probabilities for each image.
                 Element i has shape (Ri, K + 1), where Ri is the number of proposals for image i.
         """
+        # if self.freeze_box_reg:
+        #     scores = predictions
+        # else:
         scores, _ = predictions
         num_inst_per_image = [len(p) for p in proposals]
         probs = F.softmax(scores, dim=-1)

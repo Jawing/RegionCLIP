@@ -30,5 +30,9 @@ pip install mlflow
 export MLFLOW_EXPERIMENT_NAME=RegionCLIP-whereismystuff
 mlflow experiments create --experiment-name RegionCLIP-whereismystuff
 
+#dash and jupyter-dash visualization tools
+pip install --q dash==2.0.0 jupyter-dash==0.4.0;
+pip install dash-bootstrap-components
+
 #put images here for inference
 mkdir ./RegionCLIP/datasets/custom_images

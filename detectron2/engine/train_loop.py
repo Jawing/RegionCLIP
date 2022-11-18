@@ -299,6 +299,11 @@ class SimpleTrainer(TrainerBase):
             losses = loss_dict
             loss_dict = {"total_loss": loss_dict}
         else:
+            #only class loss is box reg #distributed error
+            # if self.model.freeze_box_reg:
+            #     losses = loss_dict["loss_cls"]
+            # else:
+            #     losses = sum(loss_dict.values())
             losses = sum(loss_dict.values())
 
         """

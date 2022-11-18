@@ -117,6 +117,7 @@ _PREDEFINED_SPLITS_COCO["humanware_c"] = {
     "humanware_test_awake_c": ("humanware/test_awake", "humanware/annotations/instances_test_awake_c.json"),
     "humanware_test_basic_c": ("humanware/test_basic", "humanware/annotations/instances_test_basic_c.json"),
     "humanware_test_collected_c": ("humanware/test_collected", "humanware/annotations/instances_test_collected_c.json"),
+    "humanware_test_custom_c": ("humanware/test_custom", "humanware/annotations/instances_test_custom_c.json"),
     }
 
 _PREDEFINED_SPLITS_COCO_PANOPTIC = {

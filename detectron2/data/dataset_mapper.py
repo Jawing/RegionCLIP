@@ -104,23 +104,22 @@ class DatasetMapper:
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
-        #add augmentations (add copy past and albumentations transformations)
-        if cfg.INPUT.ROT.ENABLED and is_train:
-            pass
-            #augs.append(T.RandomRotation(cfg.INPUT.ROT.RANGE, expand=True, center=None, sample_style=cfg.INPUT.ROT.TYPE, interp=None))
-        
-        #TODO note if only use Albumentation format then bbox only in Albumentation style
+
+        #only use Albumentation format then bbox only in normalized (0,1) to height, width, Albumentation style
         #LargeScaleJitter from scale of 0.1 to 2
         if cfg.INPUT.LSJ.ENABLED and is_train:
             # A.LongestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1))
             # A.SmallestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1)
             # augs.insert(0,(AlbumentationsWrapper(A.HorizontalFlip(p=0.5))))
-            augs.insert(0,(AlbumentationsWrapper(A.RandomCrop(800, 800))))
-            augs.insert(0,(AlbumentationsWrapper(A.PadIfNeeded(800, 800, border_mode=0, position= "top_left"))))
-            augs.insert(0,(AlbumentationsWrapper(A.RandomScale(scale_limit=(-0.9, 1), p=1.0))))
+            augs.insert(1,(AlbumentationsWrapper(A.RandomCrop(800, 800))))
+            augs.insert(1,(AlbumentationsWrapper(A.PadIfNeeded(800, 800, border_mode=0, position= "top_left"))))
+            augs.insert(1,(AlbumentationsWrapper(A.RandomScale(scale_limit=(0.1, 1), p=1.0))))
             
             # augs.insert(0,T.ResizeScale(0.1,2.0))
-
+        #add augmentations (add copy paste and albumentations transformations)
+        if cfg.INPUT.ROT.ENABLED and is_train:
+            augs.append(T.RandomRotation(cfg.INPUT.ROT.RANGE, expand=True, center=None, sample_style=cfg.INPUT.ROT.TYPE, interp=None))
+        
                 
         #add additional Albumentation Augmentations
         # augs.insert(0,(AlbumentationsWrapper(A.RandomBrightnessContrast(p=1.0))))
@@ -202,12 +201,12 @@ class DatasetMapper:
         #     bboxes.append(BoxMode.convert(anno["bbox"], anno["bbox_mode"], BoxMode.XYXY_ABS))
         # aug_input = T.AugInput(image, sem_seg=sem_seg_gt, boxes=bboxes)
 
-        # Image.fromarray(image).save("./pre_aug.jpg")
+        # Image.fromarray(image).save("./aug_pre.jpg")
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
         transforms = self.augmentations(aug_input)
 
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
-        # Image.fromarray(image).save("./after_aug.jpg")
+        # Image.fromarray(image).save("./aug_after.jpg")
 
         image_shape = image.shape[:2]  # h, w
         # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,

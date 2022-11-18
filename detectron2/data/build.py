@@ -37,6 +37,23 @@ __all__ = [
 ]
 
 
+def filter_images_for_boosting(dataset_dicts, images_names=[]):
+    images_names=[]
+    with open(r'/home/ahmad/region_clip/boost_images_list.txt', 'r') as fp:
+        for line in fp:
+            x = line[:-1]
+            images_names.append(x)
+
+    filtered_dataset_dicts=[]
+    for instance in dataset_dicts:
+        file_name = instance['file_name'].split('/')[-1]
+        if file_name in images_names:
+            filtered_dataset_dicts.append(instance)
+    if len(filtered_dataset_dicts)==0:
+        return dataset_dicts
+    return filtered_dataset_dicts
+
+
 def filter_images_with_only_crowd_annotations(dataset_dicts):
     """
     Filter out images with none annotations or only crowd annotations
@@ -255,6 +272,7 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
             pass
 
     assert len(dataset_dicts), "No valid data found in {}.".format(",".join(names))
+    dataset_dicts = filter_images_for_boosting(dataset_dicts, images_names=[])
     return dataset_dicts
 
 

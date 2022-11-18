@@ -55,6 +55,10 @@ class CLIPFastRCNN(nn.Module):
         offline_input_format: Optional[str] = None,
         offline_pixel_mean: Tuple[float],
         offline_pixel_std: Tuple[float],
+        freeze_rpn: True,
+        freeze_rpn_backbone: True,
+        freeze_backbone: False,
+        freeze_box_reg: False,
     ):
         """
         Args:
@@ -103,7 +107,10 @@ class CLIPFastRCNN(nn.Module):
         self.clip_crop_region_type = clip_crop_region_type
         self.use_clip_c4 = use_clip_c4 # if True, use C4 mode where roi_head uses the last resnet layer from backbone 
         self.use_clip_attpool = use_clip_attpool # if True (C4+text_emb_as_classifier), use att_pool to replace default mean pool
-
+        self.freeze_rpn = freeze_rpn
+        self.freeze_rpn_backbone = freeze_rpn_backbone
+        self.freeze_backbone = freeze_backbone
+        self.freeze_box_reg = freeze_box_reg
     @classmethod
     def from_config(cls, cfg):
         # create independent backbone & RPN
@@ -123,16 +130,24 @@ class CLIPFastRCNN(nn.Module):
                 offline_cfg.MODEL.RPN.POST_NMS_TOPK_TEST = cfg.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TEST # 1000
             if cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST:
                 offline_cfg.MODEL.RPN.PRE_NMS_TOPK_TEST = cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TEST # 6000
+            if cfg.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TRAIN:
+                offline_cfg.MODEL.RPN.POST_NMS_TOPK_TRAIN = cfg.MODEL.CLIP.OFFLINE_RPN_POST_NMS_TOPK_TRAIN # 2000
+            if cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TRAIN:
+                offline_cfg.MODEL.RPN.PRE_NMS_TOPK_TRAIN = cfg.MODEL.CLIP.OFFLINE_RPN_PRE_NMS_TOPK_TRAIN # 12000
+            if cfg.MODEL.CLIP.OFFLINE_RPN_BATCH_SIZE_PER_IMAGE:
+                offline_cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE = cfg.MODEL.CLIP.OFFLINE_RPN_BATCH_SIZE_PER_IMAGE # 256
 
             # create offline backbone and RPN
             offline_backbone = build_backbone(offline_cfg)
             offline_rpn = build_proposal_generator(offline_cfg, offline_backbone.output_shape())
 
             # convert to evaluation mode
-            for p in offline_backbone.parameters(): p.requires_grad = False
-            for p in offline_rpn.parameters(): p.requires_grad = False
-            offline_backbone.eval()
-            offline_rpn.eval()
+            if cfg.MODEL.CLIP.FREEZE_RPN_BACKBONE:
+                for p in offline_backbone.parameters(): p.requires_grad = False
+                offline_backbone.eval()
+            if cfg.MODEL.CLIP.FREEZE_RPN:
+                for p in offline_rpn.parameters(): p.requires_grad = False
+                offline_rpn.eval()
         # region proposals are ground-truth boxes
         elif cfg.MODEL.CLIP.CROP_REGION_TYPE == "GT":
             offline_backbone = None
@@ -140,6 +155,11 @@ class CLIPFastRCNN(nn.Module):
             offline_cfg = None
         
         backbone = build_backbone(cfg)
+        #freeze regionclip
+        if cfg.MODEL.CLIP.FREEZE_BACKBONE:
+            for p in backbone.parameters(): p.requires_grad = False
+            backbone.eval()
+
         # build language encoder
         if cfg.MODEL.CLIP.GET_CONCEPT_EMB: # extract concept embeddings
             language_encoder = build_clip_language_encoder(cfg)
@@ -163,6 +183,10 @@ class CLIPFastRCNN(nn.Module):
             "offline_input_format": offline_cfg.INPUT.FORMAT if offline_cfg else None,
             "offline_pixel_mean": offline_cfg.MODEL.PIXEL_MEAN if offline_cfg else None,
             "offline_pixel_std": offline_cfg.MODEL.PIXEL_STD if offline_cfg else None,
+            "freeze_rpn":cfg.MODEL.CLIP.FREEZE_RPN,
+            "freeze_rpn_backbone":cfg.MODEL.CLIP.FREEZE_RPN_BACKBONE,
+            "freeze_backbone":cfg.MODEL.CLIP.FREEZE_BACKBONE,
+            "freeze_box_reg":cfg.MODEL.CLIP.FREEZE_BOX_REG,
         }
 
     @property
@@ -200,26 +224,45 @@ class CLIPFastRCNN(nn.Module):
             gt_instances = None
         
         # localization branch: offline modules to get the region proposals
-        with torch.no_grad():  
-            if self.clip_crop_region_type == "GT":  # from ground-truth
-                proposals = []
-                for r_i, b_input in enumerate(batched_inputs): 
-                    this_gt = copy.deepcopy(b_input["instances"])  # Instance
-                    gt_boxes = this_gt._fields['gt_boxes'].to(self.device)
-                    this_gt._fields = {'proposal_boxes': gt_boxes, 'objectness_logits': torch.ones(gt_boxes.tensor.size(0)).to(self.device)}
-                    proposals.append(this_gt)                
-            elif self.clip_crop_region_type == "RPN": # from the backbone & RPN of standard Mask-RCNN, trained on base classes
+ 
+        if self.clip_crop_region_type == "GT":  # from ground-truth
+            proposals = []
+            for r_i, b_input in enumerate(batched_inputs):
+                this_gt = copy.deepcopy(b_input["instances"])  # Instance
+                gt_boxes = this_gt._fields['gt_boxes'].to(self.device)
+                this_gt._fields = {'proposal_boxes': gt_boxes, 'objectness_logits': torch.ones(gt_boxes.tensor.size(0)).to(self.device)}
+                proposals.append(this_gt)                
+        elif self.clip_crop_region_type == "RPN": # from the backbone & RPN of standard Mask-RCNN, trained on base classes
+            if self.freeze_rpn: #assumes frozen backbone when freezing rpn
+                with torch.no_grad(): 
+                    if self.offline_backbone.training or self.offline_proposal_generator.training:  #  was set to True in training script
+                        self.offline_backbone.eval() 
+                        self.offline_proposal_generator.eval()  
+                    images = self.offline_preprocess_image(batched_inputs)
+                    features = self.offline_backbone(images.tensor)
+                    if self.offline_proposal_generator is not None:
+                        proposals, _ = self.offline_proposal_generator(images, features, None)     
+            else:
                 if self.offline_backbone.training or self.offline_proposal_generator.training:  #  was set to True in training script
-                    self.offline_backbone.eval() 
-                    self.offline_proposal_generator.eval()  
-                images = self.offline_preprocess_image(batched_inputs)
-                features = self.offline_backbone(images.tensor)
+                    if self.freeze_rpn_backbone:
+                        with torch.no_grad(): 
+                            self.offline_backbone.eval() 
+                            images = self.offline_preprocess_image(batched_inputs)
+                            features = self.offline_backbone(images.tensor)
+                    else: 
+                        images = self.offline_preprocess_image(batched_inputs)
+                        features = self.offline_backbone(images.tensor)
                 if self.offline_proposal_generator is not None:
-                    proposals, _ = self.offline_proposal_generator(images, features, None)     
+                    proposals, rpn_losses = self.offline_proposal_generator(images, features, gt_instances)     
 
         # recognition branch: get 2D feature maps using the backbone of recognition branch
         images = self.preprocess_image(batched_inputs)
-        features = self.backbone(images.tensor)
+        if self.freeze_backbone:
+            with torch.no_grad(): 
+                self.backbone.eval() 
+                features = self.backbone(images.tensor)
+        else:
+            features = self.backbone(images.tensor)
 
         # Given the proposals, crop region features from 2D image features and classify the regions
         if self.use_clip_c4: # use C4 + resnet weights from CLIP
@@ -237,7 +280,13 @@ class CLIPFastRCNN(nn.Module):
             if storage.iter % self.vis_period == 0:
                 self.visualize_training(batched_inputs, proposals)
         #visualize_proposals(batched_inputs, proposals, self.input_format)
-
+        
+        if not self.freeze_rpn:
+            detector_losses['loss_cls'] = detector_losses['loss_cls']+rpn_losses['loss_rpn_cls']
+            detector_losses['loss_box_reg'] = detector_losses['loss_box_reg']+rpn_losses['loss_rpn_loc']
+        # comment out = box_reg loss will affect class predictions
+        if self.freeze_box_reg:
+            detector_losses['loss_box_reg'] = detector_losses['loss_box_reg']-detector_losses['loss_box_reg'] #torch.zeros_like(detector_losses['loss_box_reg'])
         losses = {}
         losses.update(detector_losses)
         return losses

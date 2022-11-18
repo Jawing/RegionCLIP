@@ -154,8 +154,15 @@ class ModifiedResNet(Backbone):
         self.layer2 = self._make_layer(width * 2, layers[1], stride=2)
         self.layer3 = self._make_layer(width * 4, layers[2], stride=2)
         if 'res5' in out_features:  # FPN
+            # if not create_att_pool:
+            #     self.layer4 = self._make_layer(width * 4, layers[3], stride=2)
+            # else:
             self.layer4 = self._make_layer(width * 8, layers[3], stride=2)
         else:  # C4, layer4 created here won't be used in backbone, but used in roi_head
+            # change back to width * 8 when not create_att_pool
+            # if not create_att_pool:
+            #     self.layer4 = self._make_layer(width * 4, layers[3], stride=2) # None
+            # else:
             self.layer4 = self._make_layer(width * 8, layers[3], stride=2) # None
         
         self.pool_vec = pool_vec
@@ -715,7 +722,6 @@ def build_clip_resnet_backbone(cfg, input_shape):
     # if combine {ModifiedResNet of CLIP, C4, text emb as classifier}, then has to use att_pool to match dimension
     create_att_pool = True if (cfg.MODEL.ROI_HEADS.NAME in ['CLIPRes5ROIHeads', 'CLIPStandardROIHeads'] and cfg.MODEL.CLIP.USE_TEXT_EMB_CLASSIFIER)\
                            or cfg.MODEL.ROI_HEADS.NAME == 'PretrainRes5ROIHeads' else False
-
     return ModifiedResNet(layers=vision_layers, 
                 output_dim=embed_dim,
                 heads=vision_heads,
