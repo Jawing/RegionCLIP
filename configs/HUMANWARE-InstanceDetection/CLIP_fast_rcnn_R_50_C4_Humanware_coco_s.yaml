@@ -1,7 +1,7 @@
 _BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
   ROI_HEADS:
-    NUM_CLASSES: 5
+    NUM_CLASSES: 39 #5 default class
   #   NMS_THRESH_TEST: 0.5 #default 0.5
   # RPN: #use CLIP.OFFLINE_RPN configs when using CLIPFastRCNN or PretrainFastRCNN
   #   PRE_NMS_TOPK_TRAIN: 12000 #default 12000
@@ -32,8 +32,8 @@ SOLVER:
   IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
   BASE_LR: 0.002 #was 0.002
   #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
-  STEPS: (10000, 70000) #decrease lr by factor of 10
-  MAX_ITER: 120000
+  STEPS: (60000, 100000) #decrease lr by factor of 10
+  MAX_ITER: 140000
   WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
   CHECKPOINT_PERIOD: 2500
   #WEIGHT_DECAY: 0.0001 #default 0.0001 use 0 for ADAM optimizer
@@ -65,8 +65,10 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  TRAIN: ("humanware_train_basic",)
-  TEST: ("humanware_val_basic",)
+  TRAIN: ("humanware_train_basic_coco",)
+  TEST: ("humanware_val_basic_coco",)
+#  TRAIN: ("humanware_train_basic",)
+#  TEST: ("humanware_val_basic",)
 #  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
 SEED: 42 #default -1 (maximize randomness) test seed set (24,42,50,80,100)
 
