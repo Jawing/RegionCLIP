@@ -65,8 +65,8 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  TRAIN: ("humanware_train_full",)
-  TEST: ("humanware_val_full",)
+  TRAIN: ("humanware_train_basic",)
+  TEST: ("humanware_val_basic",)
 #  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
 SEED: 42 #default -1 (maximize randomness) test seed set (24,42,50,80,100)
 

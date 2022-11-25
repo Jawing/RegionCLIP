@@ -108,10 +108,12 @@ _PREDEFINED_SPLITS_COCO["humanware_c"] = {
     "humanware_train_full_c": ("humanware/train_full", "humanware/annotations/instances_train_full_c.json"),
     "humanware_train_awake_c": ("humanware/train_awake", "humanware/annotations/instances_train_awake_c.json"),
     "humanware_train_basic_c": ("humanware/train_basic", "humanware/annotations/instances_train_basic_c.json"),
+    "humanware_train_basic_coco": ("humanware/train_basic_coco", "humanware/annotations/instances_train_basic_coco.json"),
 
     "humanware_val_full_c": ("humanware/val_full", "humanware/annotations/instances_val_full_c.json"),
     "humanware_val_awake_c": ("humanware/val_awake", "humanware/annotations/instances_val_awake_c.json"),
     "humanware_val_basic_c": ("humanware/val_basic", "humanware/annotations/instances_val_basic_c.json"),
+    "humanware_val_basic_coco": ("humanware/val_basic_coco", "humanware/annotations/instances_val_basic_coco.json"),
 
     "humanware_test_full_c": ("humanware/test_full", "humanware/annotations/instances_test_full_c.json"),
     "humanware_test_awake_c": ("humanware/test_awake", "humanware/annotations/instances_test_awake_c.json"),
