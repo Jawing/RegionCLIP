@@ -77,6 +77,7 @@ class CLIPFastRCNN(nn.Module):
         self.cfg = cfg
         self.offline_backbone = offline_backbone
         self.backbone = backbone
+        self.lang_encoder = language_encoder
         self.image_projection = image_projection
         self.offline_proposal_generator = offline_proposal_generator
         self.roi_heads = roi_heads
