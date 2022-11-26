@@ -1,0 +1,96 @@
+_BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
+MODEL:
+  BACKBONE:
+    NAME: "build_clip_swin_backbone"
+    FREEZE_AT: 2
+  SWIN:
+    OUT_FEATURES: ["stage5"]
+    #default config for UniCL
+    EMBED_DIM: 128
+    DEPTHS: [ 2, 2, 18, 2 ]
+    NUM_HEADS: [ 4, 8, 16, 32 ]
+    DROP_PATH_RATE: 0.5
+    WINDOW_SIZE: 7
+  # TEXT:
+  #   AUTOGRESSIVE: true #default true 
+  #   #TODO language encoder defaults 
+  #   #add in detectron2/modeling/backbone/clip_lang_encoder.py line 146
+  #   #for transformer
+    # WIDTH: 512
+    # HEADS: 8
+    # LAYERS: 12  
+  
+  ROI_HEADS:
+    NAME: "CLIPTransformerROIHeads"
+    IN_FEATURES: ["stage5"]
+    NUM_CLASSES: 5 #5 default class
+  #   NMS_THRESH_TEST: 0.5 #default 0.5
+  # RPN: #use CLIP.OFFLINE_RPN configs when using CLIPFastRCNN or PretrainFastRCNN
+  #   PRE_NMS_TOPK_TRAIN: 12000 #default 12000
+  #   POST_NMS_TOPK_TRAIN: 2000 #default 2000
+  #   NMS_THRESH: 0.7 # default 0.7
+  #   BATCH_SIZE_PER_IMAGE: 256 # default 256
+  CLIP:
+      #settings for training RPN
+      FREEZE_BACKBONE: False #freeze backbone when not using text embedding for linear probe training
+      FREEZE_RPN: True #default true
+      FREEZE_RPN_BACKBONE: True #default true
+      OFFLINE_RPN_PRE_NMS_TOPK_TRAIN: 12000 #default 12000
+      OFFLINE_RPN_POST_NMS_TOPK_TRAIN: 2000 #default 2000
+      OFFLINE_RPN_NMS_THRESH: 0.7 #default 0.7
+      OFFLINE_RPN_BATCH_SIZE_PER_IMAGE: 256 #default 256
+      USE_TEXT_EMB_CLASSIFIER: "text-encoder"  #or text-embedding pre CLIP text embedding initialized weights, false linear probe
+      FREEZE_BOX_REG: false #turn off box_reg for true linear probe #can only use 1 gpu
+      NO_BOX_DELTA: false #default false, set true if freeze_box_reg true
+      FREEZE_TEXT_EMB: true #default true freeze text embeding #set openset text embeding to none when freeze_text_emb
+  #   BG_CLS_LOSS_WEIGHT: 0.5
+  #   FOCAL_SCALED_LOSS: 0.25
+  #   FOCAL_SCALED_LOSS_ALPHA: -1
+TEST:
+  # DETECTIONS_PER_IMAGE: 1000 #default 100 set equal POST_NMS_TOPK_TEST to detect all from RPN
+  EVAL_PERIOD: 2500
+#optimizer parameters
+SOLVER:
+  IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
+  BASE_LR: 0.002 #was 0.002
+  #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
+  STEPS: (60000, 100000) #decrease lr by factor of 10
+  MAX_ITER: 140000
+  WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
+  CHECKPOINT_PERIOD: 2500
+  #WEIGHT_DECAY: 0.0001 #default 0.0001 use 0 for ADAM optimizer
+  ADAM:
+    ENABLED: false #default false uses SGD optimizer
+    BETAS: (0.9, 0.999)
+    EPS: 1e-08
+    AMSGRAD: false #default false, true for better lr steps
+  CLIP_GRADIENTS: 
+    ENABLED: false #default false gradient clipping for optimizers
+    #CLIP_TYPE: "value"
+    #CLIP_VALUE: 1.0
+    #NORM_TYPE: 2.0
+INPUT: 
+  #default ResizeShortestEdge augmentation settings
+  # MIN_SIZE_TRAIN_SAMPLING: choice
+  # MIN_SIZE_TRAIN: (800,)
+  # MAX_SIZE_TRAIN: 1333
+  ROT: #random rotation data augmentation
+    ENABLED: false
+    TYPE: "choice"
+    RANGE: [90,180,270]
+  RANDOM_FLIP: "horizontal"
+  LSJ: #large scale jitter data augmentation
+    ENABLED: false
+  CROP: #random cropping data augmentation
+    ENABLED: false #default false
+    TYPE: "relative_range" #default relative range (or absolute)
+    SIZE: [0.9, 0.9] #default
+DATASETS:
+  BOOSTING: False #default false turn on hard/negative sample boosting
+  TRAIN: ("humanware_train_basic_coco",)
+  TEST: ("humanware_val_basic_coco",)
+#  TRAIN: ("humanware_train_basic",)
+#  TEST: ("humanware_val_basic",)
+#  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
+SEED: 42 #default -1 (maximize randomness) test seed set (24,42,50,80,100)
+
