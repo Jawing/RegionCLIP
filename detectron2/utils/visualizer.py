@@ -327,13 +327,13 @@ def _create_text_labels_prob(classes, scores, class_names, all_scores=None,  is_
         else:
             labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
             #labels_all = []
-            all_labels=[]
+            all_labels=[] #generate top labels
             for label_line, s_line in zip(labels_all, all_scores_sort):
                 labels_each=""
                 for i, (l, s) in enumerate(zip(label_line, s_line)):
-                    if i >1:
+                    if i > 1: #set i to be the top+1 labels to display
                         break
-                    labels_each+=" {} {:.0f}%".format(l, s * 100)
+                    labels_each+="{} {:.1f}% ".format(l, s * 100)
                     
                 all_labels.append(labels_each)
 
@@ -925,7 +925,7 @@ class Visualizer:
                 lighter_color = self._change_color_brightness(color, brightness_factor=0.7)
                 font_size = (
                     np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
-                    * 0.5
+                    * 0.5 * 0.6 #make even smaller
                     * self._default_font_size
                 )
                 self.draw_text(

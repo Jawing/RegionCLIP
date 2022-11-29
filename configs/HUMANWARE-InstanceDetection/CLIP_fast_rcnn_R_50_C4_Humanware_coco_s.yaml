@@ -32,8 +32,8 @@ SOLVER:
   IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
   BASE_LR: 0.002 #was 0.002
   #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
-  STEPS: (60000, 100000) #decrease lr by factor of 10
-  MAX_ITER: 140000
+  STEPS: (80000, 120000) #decrease lr by factor of 10
+  MAX_ITER: 160000
   WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
   CHECKPOINT_PERIOD: 2500
   #WEIGHT_DECAY: 0.0001 #default 0.0001 use 0 for ADAM optimizer
