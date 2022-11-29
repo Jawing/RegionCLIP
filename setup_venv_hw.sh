@@ -34,5 +34,9 @@ mlflow experiments create --experiment-name RegionCLIP-whereismystuff
 pip install --q dash==2.0.0 jupyter-dash==0.4.0;
 pip install dash-bootstrap-components
 
+#transformer models
+pip install transformers
+pip install einops
+
 #put images here for inference
 mkdir ./RegionCLIP/datasets/custom_images

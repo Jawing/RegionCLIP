@@ -1,13 +1,14 @@
 _BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
   ROI_HEADS:
-    NUM_CLASSES: 39 #5 default class
+    NUM_CLASSES: 5 #5 default class
   #   NMS_THRESH_TEST: 0.5 #default 0.5
   # RPN: #use CLIP.OFFLINE_RPN configs when using CLIPFastRCNN or PretrainFastRCNN
   #   PRE_NMS_TOPK_TRAIN: 12000 #default 12000
   #   POST_NMS_TOPK_TRAIN: 2000 #default 2000
   #   NMS_THRESH: 0.7 # default 0.7
   #   BATCH_SIZE_PER_IMAGE: 256 # default 256
+  
   CLIP:
       #settings for training RPN
       FREEZE_BACKBONE: False #freeze backbone when not using text embedding for linear probe training
@@ -17,7 +18,7 @@ MODEL:
       OFFLINE_RPN_POST_NMS_TOPK_TRAIN: 2000 #default 2000
       OFFLINE_RPN_NMS_THRESH: 0.7 #default 0.7
       OFFLINE_RPN_BATCH_SIZE_PER_IMAGE: 256 #default 256
-      USE_TEXT_EMB_CLASSIFIER: True #no pre CLIP text embedding initialized weights
+      USE_TEXT_EMB_CLASSIFIER: "text-encoder" #no pre CLIP text embedding initialized weights
       FREEZE_BOX_REG: false #turn off box_reg for true linear probe #can only use 1 gpu
       NO_BOX_DELTA: false #default false, set true if freeze_box_reg true
       FREEZE_TEXT_EMB: true #default true freeze text embeding #set openset text embeding to none when freeze_text_emb
@@ -65,8 +66,8 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  TRAIN: ("humanware_train_basic_coco",)
-  TEST: ("humanware_val_basic_coco",)
+  TRAIN: ("humanware_train_basic",)
+  TEST: ("humanware_val_basic",)
 #  TRAIN: ("humanware_train_basic",)
 #  TEST: ("humanware_val_basic",)
 #  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000

@@ -51,7 +51,7 @@ TEST:
   EVAL_PERIOD: 2500
 #optimizer parameters
 SOLVER:
-  IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
+  IMS_PER_BATCH: 4 #was 8 for gpu memory, 2 for RN50x4
   BASE_LR: 0.002 #was 0.002
   #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
   STEPS: (60000, 100000) #decrease lr by factor of 10
@@ -87,8 +87,8 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  TRAIN: ("humanware_train_basic_coco",)
-  TEST: ("humanware_val_basic_coco",)
+  TRAIN: ("humanware_train_basic",)
+  TEST: ("humanware_val_basic",)
 #  TRAIN: ("humanware_train_basic",)
 #  TEST: ("humanware_val_basic",)
 #  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
