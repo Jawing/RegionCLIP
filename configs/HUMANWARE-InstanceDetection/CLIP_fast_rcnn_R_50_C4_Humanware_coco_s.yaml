@@ -1,7 +1,7 @@
 _BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
   ROI_HEADS:
-    NUM_CLASSES: 39 #5 default class
+    NUM_CLASSES: 86 #5 default class
   #   NMS_THRESH_TEST: 0.5 #default 0.5
   # RPN: #use CLIP.OFFLINE_RPN configs when using CLIPFastRCNN or PretrainFastRCNN
   #   PRE_NMS_TOPK_TRAIN: 12000 #default 12000
@@ -65,10 +65,18 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  TRAIN: ("humanware_train_basic_coco",)
-  TEST: ("humanware_val_basic_coco",)
+#  TRAIN: ("humanware_train_full",)
+#  TEST: ("humanware_val_full",)
 #  TRAIN: ("humanware_train_basic",)
 #  TEST: ("humanware_val_basic",)
+  # TRAIN: ("humanware_train_basic_coco",)
+  # TEST: ("humanware_val_basic_coco",)
+  # TRAIN: ("humanware_train_basic_63",)
+  # TEST: ("humanware_val_basic_63",)
+  TRAIN: ("humanware_train_basic_63_coco",)
+  TEST: ("humanware_val_basic_63_coco",)
+
+
 #  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
 SEED: 42 #default -1 (maximize randomness) test seed set (24,42,50,80,100)
 

@@ -2,8 +2,8 @@ _BASE_: "./CLIP_fast_rcnn_R_50_C4_ovd.yaml"
 MODEL:
   ROI_HEADS:
     NUM_CLASSES: 5
-    NMS_THRESH_TEST: 0.6 #Defaults to 0.5 
-    SCORE_THRESH_TEST: 0.001 #Defaults to 0.001
+    NMS_THRESH_TEST: 0.6 #Defaults to 0.5 / 0.2
+    SCORE_THRESH_TEST: 0.001 #Defaults to 0.001 / 0.1
     SOFT_NMS_ENABLED: False #Defaults to False
   CLIP:
     # NO_BOX_DELTA: False #default false set to True only detecting OOD class or for zero-shot (model aren't trained on those class), set false improves detection on base classes (box delta realigns prediction coordinates based on learned class head)
@@ -16,9 +16,10 @@ MODEL:
 DATASETS:
   TRAIN: ("humanware_train_basic",)
 #  TEST: ("humanware_test_custom",)
-#  TEST: ("humanware_test_basic",)
+#  TEST: ("humanware_test_basic_63",)
+  TEST: ("humanware_test_basic",)
 #  TEST: ("humanware_test_collected",)
-  TEST: ("humanware_test_full",)
+#  TEST: ("humanware_test_full",)
 #  TEST: ("humanware_test_awake",)
 INPUT:
   MIN_SIZE_TEST: 800

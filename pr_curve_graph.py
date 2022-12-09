@@ -1,6 +1,6 @@
 from podm import coco_decoder
 from podm.metrics import get_pascal_voc_metrics, MetricPerClass, get_bounding_boxes
-from podm.visualize import plot_precision_recall_curve, plot_precision_recall_curve_all
+from podm.visualize import plot_precision_recall_curve, plot_precision_recall_curve_all, plot_precision_recall_curve_comb
 from podm.metrics import MethodAveragePrecision
 import numpy as np
 import os
@@ -72,7 +72,10 @@ if __name__ == '__main__':
     print(f"overall mAP: {np.mean(mAP_results_list)}")
 
 
-
+    plot_precision_recall_curve_comb(results = results50,
+                                dest_dir = f"{save_fig_loc}",
+                                method = MethodAveragePrecision.AllPointsInterpolation,
+                                show_interpolated_precision=False)
     #plot for AP50
     plot_precision_recall_curve_all(results = results50,
                                 dest_dir = f"{save_fig_loc}",
