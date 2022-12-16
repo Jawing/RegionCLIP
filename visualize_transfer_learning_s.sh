@@ -20,8 +20,8 @@ MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
 # visualize the prediction json file
 python ./tools/visualize_json_results.py \
 --input ./output/inference/lvis_instances_results.json \
---output ./output/custom_coco_s \
---dataset humanware_val_custom_img \
+--output ./output/zs_hw_pretrained_s \
+--dataset humanware_test_custom_img \
 --conf-threshold 0.10 \
 --show-unique-boxes \
 --max-boxes 100 \

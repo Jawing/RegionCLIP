@@ -5,7 +5,7 @@ python3 ./tools/train_net.py \
 --eval-only  \
 --num-gpus 1 \
 --config-file ./configs/HUMANWARE-InstanceDetection/CLIP_fast_rcnn_R_50_C4_Humanware_coco_eval.yaml \
-MODEL.WEIGHTS ./output/model_best_s_90000_nkc_lsj.pth \
+MODEL.WEIGHTS ./output/model_best_s_132500_basic_coco.pth \
 MODEL.CLIP.OFFLINE_RPN_CONFIG ./configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_1x_ovd_FSD.yaml \
 MODEL.CLIP.BB_RPN_WEIGHTS ./pretrained_ckpt/rpn/rpn_coco_48.pth \
 MODEL.CLIP.TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rclip_rn50_nn5.pth \
@@ -20,6 +20,7 @@ MODEL.CLIP.OPENSET_TEST_TEXT_EMB_PATH ./output/concept_feats/concept_embeds_rcli
 #concept_embeds_c.pth
 
 #MODEL.WEIGHTS ./output/
+#model_best_s_135000_basic63_coco_86_2.pth
 #model_best_s_22000_basic63.pth
 #model_best_s_16000_basic_LSJ_ADAM.pth
 #model_best_s_27000_basic_LSJ_SGD.pth
