@@ -8,7 +8,7 @@ import argparse
 
 
 #define percentage thresholds
-cf_percents = [0.99,0.97,0.95,0.93,0.9,0.85,0.8,0.75,0.7,0.5,0.25]
+cf_percents = [0.99,0.95,0.9,0.85,0.8,0.75,0.7,0.5,0.25]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     result_coco_json = args.instances_results
 
-    gt_dataset_json=f'./datasets/humanware/annotations/instances_{args.gt_dataset_name}.json'
+    gt_dataset_json=f'./datasets/humanware/annotations/{args.gt_dataset_name}'
     classes = []
 
     #load datasets
@@ -43,6 +43,11 @@ if __name__ == '__main__':
     results50,lrs_list_all = get_pascal_voc_metrics(gt_BoundingBoxes, pd_BoundingBoxes, 0.5, 
                         method= MethodAveragePrecision.AllPointsInterpolation,
                         pr_percents= cf_percents)
+    
+    #get rid of 100% and 0% thresholds
+    for cls, value in lrs_list_all.items():
+        lrs_list_all[cls]=value[1:-1]
+    # print(lrs_list_all)
 
     #get all mAP(0.5,0.05,0.95) and mean
     iou_list = np.arange(0.5,1.0,0.05)
@@ -71,12 +76,13 @@ if __name__ == '__main__':
 
     print(f"overall mAP: {np.mean(mAP_results_list)}")
 
-
     plot_precision_recall_curve_comb(results = results50,
                                 dest_dir = f"{save_fig_loc}",
                                 method = MethodAveragePrecision.AllPointsInterpolation,
                                 show_interpolated_precision=False)
     #plot for AP50
+    del results50['All']
+    # print(results50)
     plot_precision_recall_curve_all(results = results50,
                                 dest_dir = f"{save_fig_loc}",
                                 method = MethodAveragePrecision.AllPointsInterpolation,

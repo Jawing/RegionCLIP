@@ -3,7 +3,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 #customizable ground truth names and output directory
 #valid_basic, see /data/Object_detection/data/Indoor_objectDetection/humanware/annotations for names
-GT_DATASET_NAME='test_full' 
+GT_DATASET_NAME='instances_test_full.json'
 INSTANCES_RESULTS='./output/inference/coco_instances_results.json' #'./output/inference/lvis_instances_results.json'
 OUT_DIR='./tools/vis_pr_curve/basic_coco_full'
 

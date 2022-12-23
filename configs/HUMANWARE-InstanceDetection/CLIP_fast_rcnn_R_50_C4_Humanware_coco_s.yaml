@@ -32,7 +32,7 @@ SOLVER:
   IMS_PER_BATCH: 8 #was 8 for gpu memory, 2 for RN50x4
   BASE_LR: 0.002 #was 0.002
   #previous STEPS: (3000, 12000, 16000) (3000, 22000) (6000, 8000, 9000)
-  STEPS: (60000, 120000) #decrease lr by factor of 10
+  STEPS: (10000, 60000) #decrease lr by factor of 10
   MAX_ITER: 160000
   WARMUP_ITERS: 5000 # set to 5000, too high cause nan loss 
   CHECKPOINT_PERIOD: 2500
@@ -57,7 +57,7 @@ INPUT:
     TYPE: "choice"
     RANGE: [90,180,270]
   RANDOM_FLIP: "horizontal"
-  LSJ: #large scale jitter data augmentation
+  LSJ: #large scale jitter data augmentation (with removal of elevator doors)
     ENABLED: false
   CROP: #random cropping data augmentation
     ENABLED: false #default false
@@ -65,10 +65,10 @@ INPUT:
     SIZE: [0.9, 0.9] #default
 DATASETS:
   BOOSTING: False #default false turn on hard/negative sample boosting
-  # TRAIN: ("humanware_train_full",)
-  # TEST: ("humanware_val_full",)
-  TRAIN: ("humanware_train_basic",)
-  TEST: ("humanware_val_basic",)
+  TRAIN: ("humanware_train_full",)
+  TEST: ("humanware_val_full",)
+  # TRAIN: ("humanware_train_basic",)
+  # TEST: ("humanware_val_basic",)
   # TRAIN: ("humanware_train_basic_coco",)
   # TEST: ("humanware_val_basic_coco",)
   # TRAIN: ("humanware_train_basic_63",)

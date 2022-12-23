@@ -45,9 +45,11 @@ class DatasetMapper:
     @configurable
     def __init__(
         self,
+        is_lsj: bool,
         is_train: bool,
         *,
         augmentations: List[Union[T.Augmentation, T.Transform]],
+        augmentations_base: List[Union[T.Augmentation, T.Transform]],
         image_format: str,
         use_instance_mask: bool = False,
         use_keypoint: bool = False,
@@ -80,8 +82,10 @@ class DatasetMapper:
         if recompute_boxes:
             assert use_instance_mask, "recompute_boxes requires instance masks"
         # fmt: off
+        self.is_lsj                 = is_lsj
         self.is_train               = is_train
         self.augmentations          = T.AugmentationList(augmentations)
+        self.augmentations_base     = T.AugmentationList(augmentations_base)
         self.image_format           = image_format
         self.use_instance_mask      = use_instance_mask
         self.instance_mask_format   = instance_mask_format
@@ -98,15 +102,16 @@ class DatasetMapper:
 
     @classmethod
     def from_config(cls, cfg, is_train: bool = True):
+        augs_base = utils.build_augmentation(cfg, is_train)
         augs = utils.build_augmentation(cfg, is_train)
         if cfg.INPUT.CROP.ENABLED and is_train:
             augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE))
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
-
         #only use Albumentation format then bbox only in normalized (0,1) to height, width, Albumentation style
         #LargeScaleJitter from scale of 0.1 to 2
+        is_lsj = cfg.INPUT.LSJ.ENABLED
         if cfg.INPUT.LSJ.ENABLED and is_train:
             # A.LongestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1))
             # A.SmallestMaxSize(max_size=1024, interpolation=1, always_apply=False, p=1)
@@ -114,7 +119,6 @@ class DatasetMapper:
             augs.insert(1,(AlbumentationsWrapper(A.RandomCrop(800, 800))))
             augs.insert(1,(AlbumentationsWrapper(A.PadIfNeeded(800, 800, border_mode=0, position= "top_left"))))
             augs.insert(1,(AlbumentationsWrapper(A.RandomScale(scale_limit=(0.1, 1), p=1.0))))
-            
             # augs.insert(0,T.ResizeScale(0.1,2.0))
         #add augmentations (add copy paste and albumentations transformations)
         if cfg.INPUT.ROT.ENABLED and is_train:
@@ -151,8 +155,10 @@ class DatasetMapper:
         
 
         ret = {
+            "is_lsj": is_lsj,
             "is_train": is_train,
             "augmentations": augs,
+            "augmentations_base": augs_base,
             "image_format": cfg.INPUT.FORMAT,
             "use_instance_mask": cfg.MODEL.MASK_ON,
             "instance_mask_format": cfg.INPUT.MASK_FORMAT,
@@ -203,7 +209,18 @@ class DatasetMapper:
 
         # Image.fromarray(image).save("./aug_pre.jpg")
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
-        transforms = self.augmentations(aug_input)
+
+        #filter out elevator annotated images from LSJ transformation
+        base_aug = False
+        if self.is_lsj and self.is_train:
+            for anno in dataset_dict["annotations"]:
+                #no lsj on elevator door (or other negative categorie images with anno['category_id'] > 4)
+                if anno['category_id'] == 0:
+                    transforms = self.augmentations_base(aug_input)
+                    base_aug = True
+                    break
+        if base_aug == False:
+            transforms = self.augmentations(aug_input)
 
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
         # Image.fromarray(image).save("./aug_after.jpg")

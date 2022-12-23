@@ -16,10 +16,10 @@ MODEL:
     CROP_REGION_TYPE: "RPN" #default "RPN" can switch to GT (clip style evaluation)
 DATASETS:
   TRAIN: ("humanware_train_basic",)
-#  TEST: ("humanware_test_custom",)
+  TEST: ("humanware_test_custom",)
 #  TEST: ("humanware_test_basic_63",)
 #  TEST: ("humanware_test_basic",)
-  TEST: ("humanware_test_collected",)
+#  TEST: ("humanware_test_collected",)
 #  TEST: ("humanware_test_full",)
 #  TEST: ("humanware_test_awake",)
 INPUT:
