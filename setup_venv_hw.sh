@@ -1,5 +1,5 @@
 #clone repo
-git clone https://github.com/Jawing/RegionCLIP.git
+#git clone https://gitlab.com/humanware.ca/platforms/ai/RegionCLIP.git
 
 #default exports
 export PYTHONUNBUFFERED=1
@@ -19,10 +19,23 @@ python3 -m pip install -e RegionCLIP
 # other dependencies
 pip install opencv-python timm diffdist h5py sklearn ftfy
 pip install git+https://github.com/lvis-dataset/lvis-api.git
-pip install git+https://github.com/Jawing/object_detection_metrics.git
-pip install shapely
+pip install git+https://gitlab.com/humanware.ca/platforms/ai/object_detection_metrics.git
+pip install shapely==1.8.2
 pip install flask
 #python3 -m pip install -r ./RegionCLIP/requirements.txt
+
+# #optional visualization/training tools
+# pip install bbox-visualizer
+# pip install albumentations==1.2.1
+# #mlflow setup for training experiments
+# pip install mlflow
+# # Set the experiment via environment variables
+# export MLFLOW_EXPERIMENT_NAME=RegionCLIP-whereismystuff
+# mlflow experiments create --experiment-name RegionCLIP-whereismystuff
+
+# #dash and jupyter-dash visualization tools
+# pip install --q dash==2.0.0 jupyter-dash==0.4.0;
+# pip install dash-bootstrap-components
 
 #create missing directories
 mkdir ./RegionCLIP/datasets/custom_images
